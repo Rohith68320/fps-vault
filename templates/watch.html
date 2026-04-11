@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Watch - FPS Vault</title>
+    <style>
+        body { background: #08080a; color: white; font-family: sans-serif; margin: 0; }
+        nav { background: rgba(8, 8, 10, 0.9); padding: 15px 40px; display: flex; justify-content: space-between; border-bottom: 1px solid #222;}
+        .logo { font-size: 24px; font-weight: 900; color: #fff; text-decoration: none; font-style: italic;}
+        .logo span { color: #e50914; }
+        .watch-container { display: grid; grid-template-columns: 1fr 400px; gap: 25px; max-width: 1600px; margin: 0 auto; padding: 25px; }
+        
+        .player-wrapper { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: 12px; overflow: hidden; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        video { width: 100%; height: 100%; outline: none; }
+        
+        .video-title { font-size: 24px; font-weight: bold; margin: 20px 0 10px 0; }
+        
+        .video-meta-row { display: flex; justify-content: space-between; align-items: center; padding-bottom: 15px; border-bottom: 1px solid #222; margin-bottom: 20px;}
+        .channel-info-block { display: flex; align-items: center; gap: 15px; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background-size: cover; cursor: pointer;}
+        .channel-details { display: flex; flex-direction: column; }
+        .channel-name { font-weight: bold; color: white; text-decoration: none; cursor: pointer;}
+        .channel-subs { font-size: 13px; color: #aaa; }
+        .btn-subscribe { background: white; color: black; border: none; padding: 10px 20px; font-weight: bold; border-radius: 20px; cursor: pointer; font-size: 14px; margin-left: 15px; transition: 0.2s;}
+        .btn-subscribe:hover { background: #e5e5e5; }
+
+        .action-btns { display: flex; gap: 10px; }
+        .btn-action { background: rgba(255,255,255,0.1); border: none; color: white; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: 0.2s;}
+        .btn-action:hover { background: rgba(255,255,255,0.2); }
+        
+        .desc-box { background: #1a1a1a; padding: 15px; border-radius: 12px; font-size: 14px; margin-bottom: 30px; line-height: 1.5; color: #ddd;}
+        .views-date { font-weight: bold; color: white; margin-bottom: 10px; display: block;}
+        
+        .rec-item { display: flex; gap: 10px; cursor: pointer; margin-bottom: 15px; transition: transform 0.2s;}
+        .rec-item:hover { transform: translateX(5px); }
+        .rec-thumb { width: 160px; height: 90px; background-size: cover; border-radius: 8px; flex-shrink: 0;}
+        .rec-details { display: flex; flex-direction: column; gap: 4px;}
+        .rec-title { font-size: 14px; font-weight: bold; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        @media (max-width: 1100px) {
+            .watch-container { grid-template-columns: 1fr; }
+            .video-meta-row { flex-direction: column; align-items: flex-start; gap: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="javascript:void(0)" onclick="safeNavigate('/')" class="logo">FPS<span>-</span>VAULT</a>
+        <a href="javascript:void(0)" onclick="safeNavigate('/')" style="color: #aaa; text-decoration: none;">← Back to Home</a>
+    </nav>
+    <div class="watch-container">
+        <div class="main-content">
+            <div class="player-wrapper" id="player-wrapper">
+                <!-- Added a poster image so it's never an empty black box -->
+                <video controls autoplay poster="https://picsum.photos/seed/fpsvault/1280/720">
+                    <source src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            
+            <h1 class="video-title" id="v-title">Loading...</h1>
+            
+            <div class="video-meta-row">
+                <div class="channel-info-block">
+                    <a id="c-link-avatar" href="javascript:void(0)"><div class="avatar" id="c-avatar"></div></a>
+                    <div class="channel-details">
+                        <a href="javascript:void(0)" class="channel-name" id="c-name">Channel Name</a>
+                        <div class="channel-subs" id="c-subs">0 subscribers</div>
+                    </div>
+                    <button class="btn-subscribe">Subscribe</button>
+                </div>
+                
+                <div class="action-btns">
+                    <button class="btn-action">👍 <span id="v-likes">0</span></button>
+                    <button class="btn-action">👎</button>
+                    <button class="btn-action">➕ Save</button>
+                    <button class="btn-action" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+                </div>
+            </div>
+
+            <div class="desc-box">
+                <span class="views-date"><span id="v-views">0</span> views • <span id="v-date">Today</span></span>
+                <span id="v-desc">Description loading...</span>
+            </div>
+        </div>
+        
+        <div class="sidebar">
+            <h3 style="margin-top: 0;">Recommended</h3>
+            <div id="rec-container"></div>
+        </div>
+    </div>
+
+    <script>
+        const rawId = "{{ video_id }}";
+        const VIDEO_ID = parseInt(rawId) || 1;
+
+        function safeNavigate(url) {
+            if (window.location.protocol.startsWith('blob')) {
+                console.log("Preview mode navigation to: " + url);
+                const msg = document.createElement('div');
+                msg.innerText = `Redirecting to ${url} ...`;
+                msg.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#e50914; color:white; padding:10px 20px; border-radius:20px; z-index:9999; font-weight:bold;";
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 1500);
+            } else {
+                window.location.href = url;
+            }
+        }
+
+        // Fullscreen Toggle Logic
+        function toggleFullscreen() {
+            const playerWrapper = document.getElementById('player-wrapper');
+            if (!document.fullscreenElement) {
+                playerWrapper.requestFullscreen().catch(err => console.log("Fullscreen error:", err));
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        async function loadVideoData() {
+            let data;
+            
+            if (window.location.protocol.startsWith('blob')) {
+                data = {
+                    title: "Apex Legends Clutch - 1 HP WIN!",
+                    views_cnt: "15,243",
+                    likes_cnt: "1.2k",
+                    upload_date: "2026-04-11",
+                    description: "Winning the game with 1 HP. Don't forget to like and subscribe!",
+                    channel_name: "GamerPro Official",
+                    subscriber_cnt: "1.2M",
+                    channel_id: 1
+                };
+            } else {
+                try {
+                    const response = await fetch(`/api/watch/${VIDEO_ID}`);
+                    if (!response.ok) return;
+                    data = await response.json();
+                } catch (error) {
+                    console.error("Fetch failed", error);
+                    return;
+                }
+            }
+
+            if (data) {
+                document.getElementById('v-title').innerText = data.title;
+                document.getElementById('v-views').innerText = data.views_cnt;
+                if(document.getElementById('v-likes')) document.getElementById('v-likes').innerText = data.likes_cnt || "1.2k";
+                document.getElementById('v-date').innerText = data.upload_date;
+                document.getElementById('v-desc').innerText = data.description || "No description provided.";
+                
+                document.getElementById('c-name').innerText = data.channel_name;
+                document.getElementById('c-subs').innerText = `${data.subscriber_cnt} subscribers`;
+                document.getElementById('c-avatar').style.backgroundImage = `url('https://api.dicebear.com/7.x/avataaars/svg?seed=${data.channel_name}')`;
+                
+                document.getElementById('c-name').onclick = (e) => { e.preventDefault(); safeNavigate(`/channel/${data.channel_id}`); };
+                document.getElementById('c-link-avatar').onclick = (e) => { e.preventDefault(); safeNavigate(`/channel/${data.channel_id}`); };
+            }
+        }
+
+        function generateSidebarRecs() {
+            const container = document.getElementById('rec-container');
+            container.innerHTML = '';
+            for(let i=1; i<=8; i++) {
+                const fakeId = Math.floor(Math.random() * 5) + 1;
+                container.innerHTML += `
+                    <div class="rec-item" onclick="safeNavigate('/watch/${fakeId}')">
+                        <div class="rec-thumb" style="background-image: url('https://picsum.photos/seed/fpsrec${i}/160/90');"></div>
+                        <div class="rec-details">
+                            <div class="rec-title">Recommended Video ${i}</div>
+                            <span style="font-size: 12px; color: #aaa;">Gaming Channel</span>
+                            <span style="font-size: 12px; color: #888;">${(Math.random() * 50).toFixed(1)}k views</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        loadVideoData();
+        generateSidebarRecs();
+    </script>
+</body>
+</html>

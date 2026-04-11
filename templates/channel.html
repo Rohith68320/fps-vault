@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Channel - FPS Vault</title>
+    <style>
+        body { background: #08080a; color: white; font-family: sans-serif; margin: 0; }
+        nav { background: rgba(8, 8, 10, 0.9); padding: 20px 40px; display: flex; justify-content: space-between; border-bottom: 1px solid #222;}
+        .logo { font-size: 24px; font-weight: 900; color: #fff; text-decoration: none; font-style: italic;}
+        .logo span { color: #e50914; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .banner { width: 100%; height: 200px; background-size: cover; background-position: center; border-radius: 0 0 12px 12px; margin-bottom: 30px;}
+        .channel-header { display: flex; gap: 25px; align-items: flex-start; margin-bottom: 40px; padding-bottom: 30px; border-bottom: 1px solid #222;}
+        .avatar { width: 120px; height: 120px; border-radius: 50%; background-size: cover;}
+        .channel-info { flex: 1; }
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-bottom: 50px; }
+        .video-card { cursor: pointer; transition: transform 0.2s; }
+        .video-card:hover { transform: translateY(-5px); }
+        .thumbnail { width: 100%; aspect-ratio: 16/9; background-size: cover; border-radius: 8px; position: relative;}
+        .duration { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.8); color: white; font-size: 12px; padding: 3px 6px; border-radius: 4px;}
+        .video-title { font-size: 15px; font-weight: bold; margin: 10px 0 5px 0;}
+        .playlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-bottom: 50px;}
+        .playlist-card { background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid #333; text-align: center; cursor: pointer; transition: 0.2s;}
+        .playlist-card:hover { border-color: #e50914; }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="/" class="logo">FPS<span>-</span>VAULT</a>
+        <a href="/" style="color: #aaa; text-decoration: none;">← Back to Home</a>
+    </nav>
+    <div class="container">
+        <div class="banner" style="background-image: url('https://picsum.photos/seed/fpsvault/1200/200');"></div>
+        <div class="channel-header">
+            <div class="avatar" id="c-avatar" style="background-image: url('https://api.dicebear.com/7.x/avataaars/svg?seed=Channel');"></div>
+            <div class="channel-info">
+                <h1 id="c-name">Loading...</h1>
+                <div style="color: #aaa; margin-bottom: 10px;"><span id="c-subs">0 Subscribers</span> • <span id="c-vids">0 Videos</span></div>
+            </div>
+        </div>
+        
+        <h3>Uploads</h3>
+        <div class="video-grid" id="video-container"></div>
+        
+        <h3>Playlists</h3>
+        <div class="playlist-grid" id="playlist-container"></div>
+    </div>
+
+    <script>
+        // CLEAN JINJA: No more string wrapping, no more fallbacks.
+        // Flask cleanly injects the ID directly into the javascript variable here!
+        const CHANNEL_ID = {{ channel_id }};
+
+        async function loadChannelData() {
+            try {
+                // CLEAN FETCH: Directly calls the local backend
+                const response = await fetch(`/api/channel/${CHANNEL_ID}`);
+                if (!response.ok) return;
+                const data = await response.json();
+
+                document.getElementById('c-name').innerText = data.channel_name;
+                document.getElementById('c-subs').innerText = `${data.subscriber_cnt} Subscribers`;
+                document.getElementById('c-vids').innerText = `${data.video_count} Videos`;
+                document.getElementById('c-avatar').style.backgroundImage = `url('https://api.dicebear.com/7.x/avataaars/svg?seed=${data.channel_name}')`;
+
+                // Render Videos
+                const vContainer = document.getElementById('video-container');
+                vContainer.innerHTML = '';
+                data.videos.forEach(v => {
+                    vContainer.innerHTML += `
+                        <div class="video-card" onclick="window.location.href='/watch/${v.id}'">
+                            <div class="thumbnail" style="background-image: url('https://picsum.photos/seed/vid${v.id}/400/225');">
+                                <div class="duration">${v.duration || "10:24"}</div>
+                            </div>
+                            <h4 class="video-title">${v.title}</h4>
+                            <div style="font-size: 13px; color: #aaa;">${v.views} views</div>
+                        </div>
+                    `;
+                });
+
+                // Render Playlists
+                const pContainer = document.getElementById('playlist-container');
+                pContainer.innerHTML = '';
+                data.playlists.forEach(p => {
+                    pContainer.innerHTML += `
+                        <div class="playlist-card" onclick="window.location.href='/playlist/${p.id}'">
+                            <div style="font-size: 32px; margin-bottom: 10px;">📺</div>
+                            <strong>${p.title}</strong>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error("Fetch failed", error);
+            }
+        }
+        
+        loadChannelData();
+    </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register - FPS Vault</title>
+    <style>
+        body { background: #08080a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .box { background: #141414; padding: 40px; border-radius: 8px; border: 1px solid #333; width: 300px;}
+        input { width: 100%; padding: 10px; margin: 10px 0; background: #222; border: 1px solid #444; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #e50914; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        #message { margin-top: 15px; color: #0f0; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h2>Create Account</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="register()">Register</button>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        async function register() {
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // This is the Javascript "fetch" talking to your new Python Route!
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: username, email: email, password: password })
+            });
+
+            const result = await response.json();
+            
+            if (response.ok) {
+                document.getElementById('message').style.color = '#0f0';
+                document.getElementById('message').innerText = result.message + " Created: " + result.channel_name;
+
+                setTimeout(() => window.location.href = "/");
+            } else {
+                alert(data.error);
+            }
+        }
+    </script>
+</body>
+</html>

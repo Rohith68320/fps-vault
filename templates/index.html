@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPS-VAULT - Live Spatial UI</title>
+    <!-- Use CDN links so they load correctly in preview environments -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #08080a;
+            --nav-bg: rgba(8, 8, 10, 0.85);
+            --primary: #e50914; 
+            --text-light: #f5f5f5;
+            --text-muted: #888;
+            --card-bg: #141414;
+        }
+
+        body, html { 
+            margin: 0; padding: 0; 
+            background-color: var(--bg-color); 
+            color: var(--text-light); 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            user-select: none;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+        
+        nav {
+            position: fixed; top: 0; left: 0; width: 100%; height: 70px;
+            background: var(--nav-bg);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 40px; box-sizing: border-box;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .logo { 
+            font-size: 26px; font-weight: 900; color: #fff; letter-spacing: 4px; 
+            text-decoration: none; cursor: pointer; font-style: italic;
+            text-shadow: 0 0 10px var(--primary), 3px 3px 0px #550000;
+            transition: transform 0.3s ease, text-shadow 0.3s ease;
+        }
+        .logo span { color: var(--primary); text-shadow: 3px 3px 0px #222; }
+        .logo:hover { transform: scale(1.05) skewX(-5deg); text-shadow: 0 0 20px var(--primary), 4px 4px 0px #550000; }
+        
+        .search-container { flex: 1; display: flex; justify-content: center; padding: 0 40px; }
+        .search-bar {
+            width: 100%; max-width: 500px; padding: 12px 25px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 30px; color: white; outline: none; font-size: 14px;
+            transition: border-color 0.3s, background 0.3s;
+        }
+        .search-bar:focus { border-color: var(--primary); background: rgba(0,0,0,0.8); }
+
+        .nav-links { display: flex; gap: 25px; align-items: center; }
+        .nav-links a { color: var(--text-light); text-decoration: none; font-size: 18px; transition: color 0.2s; cursor: pointer; }
+        .nav-links a:hover { color: var(--primary); }
+        .profile-btn { width: 35px; height: 35px; border-radius: 50%; background: #333; cursor: pointer; border: 2px solid transparent; transition: 0.2s;}
+        .profile-btn:hover { border-color: var(--primary); }
+
+        #hero-section { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; cursor: grab; }
+        #canvas-container:active { cursor: grabbing; }
+        #ui-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+        .interactive { pointer-events: auto; }
+
+        #wheel-container {
+            position: absolute; top: 50%; left: 0;
+            transform: translate(-50%, -50%) rotate(0deg);
+            width: 500px; height: 500px; border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: radial-gradient(circle, rgba(20,20,20,0.8) 0%, rgba(8,8,10,0.2) 100%);
+            cursor: grab; backdrop-filter: blur(4px);
+        }
+        #wheel-container:active { cursor: grabbing; }
+        
+        .genre-item {
+            position: absolute; top: 50%; left: 50%;
+            font-size: 12px; font-weight: 600; color: var(--text-muted);
+            padding: 6px 16px; background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; 
+            text-transform: uppercase; letter-spacing: 1px; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .genre-item:hover, .genre-item.active-genre { 
+            color: #fff; background: var(--primary); border-color: var(--primary); 
+            box-shadow: 0 0 15px rgba(229, 9, 20, 0.4);
+        }
+
+        #hover-overlay {
+            position: absolute; top: 0; left: 0; transform: translate(-50%, -50%);
+            text-align: center; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+            z-index: 20; background: rgba(0, 0, 0, 0.4); 
+            backdrop-filter: blur(2px);
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 25px; box-sizing: border-box; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        #hover-title { font-size: 22px; font-weight: 800; color: #fff; margin: 0 0 10px 0; letter-spacing: 0.5px; text-shadow: 0 2px 4px #000; }
+        #hover-desc { 
+            font-size: 13px; color: #ddd; margin: 0; line-height: 1.5; font-weight: 600; word-wrap: break-word; 
+            display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden;
+            text-shadow: 0 1px 3px #000;
+        }
+        #hover-meta { margin-top: 15px; color: var(--primary); font-weight: bold; font-size: 13px; text-shadow: 0 1px 3px #000; }
+
+        #instruction { position: absolute; top: 90px; right: 30px; color: rgba(255,255,255,0.3); font-size: 13px; text-align: right; pointer-events: none; }
+
+        #content-section { padding: 40px; background: var(--bg-color); position: relative; z-index: 20; }
+        .content-row { margin-bottom: 50px; }
+        .content-row h2 { font-size: 20px; margin-bottom: 20px; color: var(--text-light); }
+        .video-slider { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 20px; }
+        .video-slider::-webkit-scrollbar { height: 8px; }
+        .video-slider::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        
+        .video-item { min-width: 320px; width: 320px; display: flex; flex-direction: column; gap: 12px; cursor: pointer; }
+        .video-thumb {
+            width: 100%; aspect-ratio: 16 / 9; background: var(--card-bg); border-radius: 8px;
+            background-size: cover; background-position: center; border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.3s, border-color 0.3s;
+        }
+        .video-item:hover .video-thumb { transform: scale(1.05); border-color: rgba(255,255,255,0.3); box-shadow: 0 10px 20px rgba(0,0,0,0.8); }
+        
+        .card-content { display: flex; flex-direction: column; gap: 4px; padding: 0 4px; }
+        .card-title { font-size: 16px; font-weight: bold; margin-bottom: 2px; }
+        .card-views { font-size: 13px; color: var(--primary); font-weight: 600;}
+        .card-desc { font-size: 12px; color: #bbb; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;}
+
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="javascript:void(0)" class="logo" onclick="window.scrollTo(0,0); return false;">FPS<span>-</span>VAULT</a>
+        <div class="search-container"><input type="text" class="search-bar" placeholder="Search live streams, channels, or games..."></div>
+        <div class="nav-links" id="auth-section">
+            <a href="/login" style="color: white; font-weight: bold;">Login</a>
+            <a href="/register" style="background: var(--primary); padding: 5px 15px; border-radius: 4px; color: white;">Sign Up</a>
+        </div>
+    </nav>
+
+    <div id="hero-section">
+        <div id="canvas-container"></div>
+        <div id="ui-layer">
+            <div id="instruction"><h3>Drag left edge to rotate genres</h3><p>Drag background to rotate 3D space</p><p>Hover and Click a video to play</p></div>
+            <div id="hover-overlay">
+                <h1 id="hover-title">Stream Title</h1>
+                <p id="hover-desc">A detailed description of the current stream.</p>
+                <div id="hover-meta">🔴 LIVE • 14.2k Viewers</div>
+            </div>
+            <div id="wheel-container" class="interactive"></div>
+        </div>
+    </div>
+
+    <div id="content-section">
+        <div class="content-row"><h2>Recommended Live Channels</h2><div class="video-slider" id="random-picks"></div></div>
+        <div class="content-row"><h2>Trending in E-Sports</h2><div class="video-slider" id="trending-now"></div></div>
+        <div class="content-row"><h2>Just Chatting</h2><div class="video-slider" id="scifi-picks"></div></div>
+    </div>
+
+    <script>
+        // Custom Navigation wrapper to prevent the Canvas preview iframe from crashing
+        function navigate(path) {
+            if (window.location.protocol.startsWith('blob')) {
+                console.log(`[Preview Mode] Navigating to: ${path}`);
+                const msg = document.createElement('div');
+                msg.innerText = `Redirecting to ${path} ...`;
+                msg.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#e50914; color:white; padding:10px 20px; border-radius:20px; z-index:9999; font-weight:bold;";
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 1500);
+            } else {
+                window.location.href = path; 
+            }
+        }
+
+        // Authentication Check
+        async function checkAuthStatus() {
+            const authSection = document.getElementById('auth-section');
+            try {
+                // Avoid fetching relative URLs in blob preview
+                if (window.location.protocol.startsWith('blob')) return;
+
+                const response = await fetch('/api/current_user');
+                const data = await response.json();
+
+                if (data.logged_in) {
+                    authSection.innerHTML = `
+                        <span style="font-weight: bold; color: var(--primary);">Welcome, ${data.username}</span>
+                        <a href="javascript:void(0)" onclick="navigate('/upload')" style="background: white; color: black; padding: 5px 12px; border-radius: 4px; font-weight: bold; text-decoration: none;">+ Upload</a>
+                        <a href="javascript:void(0)" onclick="navigate('/playlists')" style="color: white; font-weight: bold; text-decoration: none;">Playlists</a>
+                        <a href="javascript:void(0)" onclick="logout()" style="color: #888; text-decoration: none;">Logout</a>
+                        <div class="profile-btn" onclick="navigate('/channel/${data.user_id}')"></div>
+                    `;
+                }
+            } catch (error) {
+                console.warn("Auth check failed. Preview mode active.");
+            }
+        }
+
+        async function logout() {
+            if (!window.location.protocol.startsWith('blob')) {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.reload();
+            }
+        }
+        checkAuthStatus();
+
+        const genres = ["Gaming", "IRL", "Music", "E-Sports", "Talk Shows", "Art", "Science", "Fitness", "Food", "Travel"];
+        const wheel = document.getElementById('wheel-container');
+        const wheelRadius = 240; 
+        const descriptions = [
+            "Join the ultimate tournament finals live right now! The stakes have never been higher.",
+            "Chill stream: chatting with viewers, reviewing setups, and hanging out.",
+            "Speedrunning classic games. Trying to beat the world record tonight!"
+        ];
+
+        genres.forEach((genre, i) => {
+            const el = document.createElement('div');
+            el.className = 'genre-item interactive';
+            if (i===0) el.classList.add('active-genre');
+            el.innerText = genre;
+            const angle = (i / genres.length) * 360;
+            el.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateX(${wheelRadius}px)`;
+            
+            el.onclick = (e) => {
+                document.querySelectorAll('.genre-item').forEach(g => g.classList.remove('active-genre'));
+                el.classList.add('active-genre');
+                loadGenreStreams(genre);
+                triggerRevealAnimation(); 
+            };
+            wheel.appendChild(el);
+        });
+
+        const generateCards = (containerId, count) => {
+            const container = document.getElementById(containerId);
+            for(let i=1; i<=count; i++) {
+                const item = document.createElement('div');
+                item.className = 'video-item';
+                const title = `Live Stream ${Math.floor(Math.random()*1000)}`;
+                const views = (Math.random() * 50 + 1).toFixed(1);
+                const desc = descriptions[Math.floor(Math.random()*descriptions.length)];
+                const localImgNum = (i % 5) + 1;
+                
+                // Give it a mock ID so it redirects to a valid URL
+                const mockId = Math.floor(Math.random() * 5) + 1;
+
+                // Fallback to picsum if local image doesn't exist
+                const thumbUrl = window.location.protocol.startsWith('blob') 
+                    ? `https://picsum.photos/seed/fpsvault${i}/320/180`
+                    : `/static/images/thumb${localImgNum}.jpg`;
+
+                item.innerHTML = `
+                    <div class="video-thumb" style="background-image: url('${thumbUrl}');"></div>
+                    <div class="card-content">
+                        <div class="card-title">${title}</div>
+                        <div class="card-views">🔴 ${views}k Viewers</div>
+                        <div class="card-desc">${desc}</div>
+                    </div>
+                `;
+                // Redirect to the dedicated Watch Page instead of opening a modal!
+                item.onclick = () => navigate(`/watch/${mockId}`);
+                container.appendChild(item);
+            }
+        };
+
+        generateCards('random-picks', 12);
+        generateCards('trending-now', 10);
+        generateCards('scifi-picks', 8);
+
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x08080a, 20, 60);
+
+        const heroRect = document.getElementById('hero-section').getBoundingClientRect();
+        const camera = new THREE.PerspectiveCamera(45, heroRect.width / heroRect.height, 0.1, 1000);
+        camera.position.set(0, 0, 45); 
+
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(heroRect.width, heroRect.height);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const carouselGroup = new THREE.Group();
+        scene.add(carouselGroup);
+
+        const ringGeo = new THREE.RingGeometry(14.8, 15.2, 128);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.05 });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = Math.PI / 2;
+        carouselGroup.add(ring);
+
+        const videoCount = 12;
+        const videoRadius = 15;
+        const videoPlanes = [];
+
+        function createVideoTexture(title, hue) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 400; canvas.height = 600;
+            const ctx = canvas.getContext('2d');
+            const texture = new THREE.CanvasTexture(canvas);
+            
+            const grad = ctx.createLinearGradient(0, 0, 0, 600);
+            grad.addColorStop(0, `hsl(${hue}, 40%, 15%)`);
+            grad.addColorStop(1, `hsl(${hue}, 60%, 5%)`);
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 400, 600);
+            
+            const img = new Image();
+            const localImgNum = Math.floor(Math.random() * 5) + 1;
+            
+            // Use picsum for previews
+            img.src = window.location.protocol.startsWith('blob') 
+                ? `https://picsum.photos/seed/fps${hue}/400/600`
+                : `/static/images/thumb${localImgNum}.jpg`;
+                
+            // Need crossOrigin to draw external images to canvas without tainting it
+            img.crossOrigin = "Anonymous";
+            
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0, 400, 600);
+                ctx.strokeStyle = `rgba(255,255,255,0.15)`;
+                ctx.lineWidth = 4;
+                ctx.strokeRect(2, 2, 396, 596);
+                ctx.fillStyle = '#e50914';
+                ctx.fillRect(20, 20, 80, 30);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 18px sans-serif';
+                ctx.fillText('LIVE', 60, 42);
+                texture.needsUpdate = true;
+            };
+            return texture;
+        }
+
+        const planeGeo = new THREE.PlaneGeometry(6, 9);
+        
+        for (let i = 0; i < videoCount; i++) {
+            const angle = (i / videoCount) * Math.PI * 2;
+            const mat = new THREE.MeshBasicMaterial({ 
+                map: createVideoTexture(`Stream ${i+1}`, i * 30),
+                transparent: true, opacity: 0, side: THREE.DoubleSide
+            });
+            const plane = new THREE.Mesh(planeGeo, mat);
+            plane.userData = { 
+                id: (i % 3) + 1, // Mock DB ID
+                title: `Stream ${i+1}`,
+                desc: descriptions[i % descriptions.length],
+                views: `${(Math.random() * 50 + 1).toFixed(1)}k Viewers`
+            }; 
+            plane.position.x = Math.cos(angle) * videoRadius;
+            plane.position.z = Math.sin(angle) * videoRadius;
+            plane.position.y = 0;
+            plane.rotation.y = -angle + Math.PI / 2;
+            carouselGroup.add(plane);
+            videoPlanes.push(plane);
+        }
+
+        function loadGenreStreams(genreName) {
+            videoPlanes.forEach((p, i) => {
+                gsap.to(p.scale, { x: 0.1, y: 0.1, duration: 0.3, ease: "power2.in", onComplete: () => {
+                    const newTitle = `${genreName} Stream ${i+1}`;
+                    p.material.map = createVideoTexture(newTitle, Math.random() * 360);
+                    p.userData.title = newTitle;
+                    p.userData.desc = descriptions[Math.floor(Math.random()*descriptions.length)];
+                    p.userData.views = `${(Math.random() * 100 + 1).toFixed(1)}k Viewers`;
+                    gsap.to(p.scale, { x: 1, y: 1, duration: 0.5, ease: "back.out(1.5)", delay: i * 0.05 });
+                }});
+            });
+        }
+
+        let targetCarouselRotY = 0;
+        let isDraggingCanvas = false;
+        let canvasDragDistance = 0; 
+        let prevMousePos = { x: 0, y: 0 };
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2(-10, -10);
+        const canvasEl = document.getElementById('canvas-container');
+        
+        canvasEl.addEventListener('mousedown', (e) => {
+            isDraggingCanvas = true; canvasDragDistance = 0; prevMousePos = { x: e.clientX, y: e.clientY };
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (isDraggingCanvas && canvasDragDistance < 5) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(videoPlanes);
+                if (intersects.length > 0 && intersects[0].object.material.opacity > 0.5) {
+                    const data = intersects[0].object.userData;
+                    // Redirect to dedicated watch page!
+                    navigate(`/watch/${data.id}`);
+                }
+            }
+            isDraggingCanvas = false; isDraggingWheel = false; 
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            const rect = canvasEl.getBoundingClientRect();
+            if (e.clientY <= rect.bottom) {
+                mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            } else { mouse.x = -10; }
+
+            if (isDraggingCanvas) {
+                const deltaX = e.clientX - prevMousePos.x;
+                const deltaY = e.clientY - prevMousePos.y;
+                canvasDragDistance += Math.abs(deltaX) + Math.abs(deltaY);
+                targetCarouselRotY += deltaX * 0.005;
+                prevMousePos = { x: e.clientX, y: e.clientY };
+            }
+
+            if (isDraggingWheel) {
+                const wRect = wheel.getBoundingClientRect();
+                const cx = wRect.left + wRect.width / 2;
+                const cy = wRect.top + wRect.height / 2;
+                const angle = Math.atan2(e.clientY - cy, e.clientX - cx);
+                wheelRot = startWheelRot + (angle - startAngle) * (180 / Math.PI);
+                wheel.style.transform = `translate(-50%, -50%) rotate(${wheelRot}deg)`;
+                if (!hasAnimatedCamera && Math.abs(wheelRot) > 10) triggerRevealAnimation();
+            }
+        });
+
+        function triggerRevealAnimation() {
+            if (!hasAnimatedCamera) {
+                hasAnimatedCamera = true;
+                gsap.to(camera.position, { y: 2, z: 32, duration: 2.5, ease: "power3.inOut" });
+                videoPlanes.forEach(p => gsap.to(p.material, { opacity: 1, duration: 2, delay: 0.5 }));
+            }
+        }
+
+        let isDraggingWheel = false; let wheelRot = 0; let startAngle = 0; let startWheelRot = 0; let hasAnimatedCamera = false;
+        wheel.addEventListener('mousedown', (e) => {
+            isDraggingWheel = true;
+            const wRect = wheel.getBoundingClientRect();
+            startAngle = Math.atan2(e.clientY - (wRect.top + wRect.height / 2), e.clientX - (wRect.left + wRect.width / 2));
+            startWheelRot = wheelRot;
+        });
+
+        const hoverOverlay = document.getElementById('hover-overlay');
+        const hoverTitle = document.getElementById('hover-title');
+        const hoverDesc = document.getElementById('hover-desc');
+        const hoverMeta = document.getElementById('hover-meta');
+        const centerVec = new THREE.Vector3(); const topVec = new THREE.Vector3(); const bottomVec = new THREE.Vector3();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            carouselGroup.rotation.y += (targetCarouselRotY - carouselGroup.rotation.y) * 0.08;
+            camera.lookAt(0, 0, 0);
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(videoPlanes);
+            const hoveredObj = intersects.length > 0 ? intersects[0].object : null;
+
+            let maxZ = -Infinity; let closestPlane = null; const tempVector = new THREE.Vector3();
+            videoPlanes.forEach(p => { p.getWorldPosition(tempVector); if (tempVector.z > maxZ) { maxZ = tempVector.z; closestPlane = p; } });
+
+            let activeHover = false; let hoveredObjRef = null;
+
+            videoPlanes.forEach(p => {
+                p.getWorldPosition(tempVector);
+                let targetScale = 1.0;
+                let targetOpacity = hasAnimatedCamera ? THREE.MathUtils.clamp((tempVector.z - 6) / 8, 0.0, 1.0) : p.material.opacity;
+
+                if (p === closestPlane) { targetScale = 1.2; if (p === hoveredObj) { targetScale = 1.4; activeHover = true; hoveredObjRef = p; } }
+                if (hoveredObj && hoveredObj === closestPlane && p !== hoveredObj) targetOpacity *= 0.15; 
+
+                p.scale.lerp(new THREE.Vector3(targetScale, targetScale, 1), 0.1);
+                if(hasAnimatedCamera) p.material.opacity += (targetOpacity - p.material.opacity) * 0.1;
+            });
+
+            if (activeHover && hoveredObjRef && !isDraggingCanvas && !isDraggingWheel) {
+                canvasEl.style.cursor = 'pointer'; hoverOverlay.style.opacity = '1';
+                if (hoverTitle.innerText !== hoveredObjRef.userData.title) {
+                    hoverTitle.innerText = hoveredObjRef.userData.title;
+                    hoverDesc.innerText = hoveredObjRef.userData.desc;
+                    hoverMeta.innerText = `🔴 LIVE • ${hoveredObjRef.userData.views}`;
+                }
+                hoveredObjRef.getWorldPosition(centerVec); centerVec.project(camera);
+                const rect = document.getElementById('hero-section').getBoundingClientRect();
+                hoverOverlay.style.left = `${(centerVec.x * 0.5 + 0.5) * rect.width}px`;
+                hoverOverlay.style.top = `${-(centerVec.y * 0.5 - 0.5) * rect.height}px`;
+                topVec.set(0, 4.5, 0).applyMatrix4(hoveredObjRef.matrixWorld).project(camera);
+                bottomVec.set(0, -4.5, 0).applyMatrix4(hoveredObjRef.matrixWorld).project(camera);
+                const pHeight = Math.abs(topVec.y - bottomVec.y) * 0.5 * rect.height;
+                hoverOverlay.style.height = `${pHeight}px`; hoverOverlay.style.width = `${pHeight * (6/9)}px`;
+            } else {
+                if (!isDraggingCanvas && !isDraggingWheel) canvasEl.style.cursor = 'grab';
+                hoverOverlay.style.opacity = '0';
+            }
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            const hRect = document.getElementById('hero-section').getBoundingClientRect();
+            camera.aspect = hRect.width / hRect.height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(hRect.width, hRect.height);
+        });
+    </script>
+</body>
+</html>

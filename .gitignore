@@ -1,0 +1,10 @@
+# Hide passwords
+.env
+
+# Hide Python virtual environment
+venv/
+__pycache__/
+
+# Hide Mac/Windows system files (just in case)
+.DS_Store
+Thumbs.db

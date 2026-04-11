@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - FPS Vault</title>
+    <style>
+        body { background: #08080a; color: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;}
+        .box { background: #141414; padding: 40px; border-radius: 8px; border: 1px solid #333; width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);}
+        h2 { margin-top: 0; color: #fff; text-align: center; font-style: italic; letter-spacing: 2px;}
+        h2 span { color: #e50914; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #444; color: white; box-sizing: border-box; border-radius: 4px; outline: none; transition: border 0.3s;}
+        input:focus { border-color: #e50914; }
+        button { width: 100%; padding: 12px; background: #e50914; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 15px; border-radius: 4px; transition: background 0.3s;}
+        button:hover { background: #b20710; }
+        #message { margin-top: 15px; font-size: 14px; text-align: center; min-height: 20px;}
+        .link { color: #888; font-size: 13px; margin-top: 20px; display: block; text-align: center; text-decoration: none; transition: color 0.3s;}
+        .link:hover { color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h2>FPS<span>-</span>VAULT</h2>
+        <input type="email" id="email" placeholder="Email Address">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+        <div id="message"></div>
+        <a href="/register" class="link">Don't have an account? Register here.</a>
+    </div>
+
+    <script>
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const msgBox = document.getElementById('message');
+
+            // 1. Frontend Check: Are fields empty?
+            if (!email || !password) {
+                msgBox.style.color = '#ff4444';
+                msgBox.innerText = "Please fill in all fields.";
+                return; // Stop the function here
+            }
+
+            msgBox.style.color = '#888';
+            msgBox.innerText = "Verifying credentials...";
+
+            // 2. Ask Python to verify
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email, password: password })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    msgBox.style.color = '#00C851';
+                    msgBox.innerText = "Login Successful! Redirecting...";
+                    setTimeout(() => window.location.href = "/", 1000);
+                } else {
+                    // This catches the "Incorrect password" or "No account found" from Python
+                    msgBox.style.color = '#ff4444';
+                    msgBox.innerText = result.error;
+                }
+            } catch (error) {
+                msgBox.style.color = '#ff4444';
+                msgBox.innerText = "Server error. Please try again later.";
+            }
+        }
+    </script>
+</body>
+</html>
