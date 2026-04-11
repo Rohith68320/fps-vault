@@ -106,6 +106,89 @@ def login_user():
     session['username'] = username.capitalize()
     return jsonify({"message": "Login successful!"}), 200
 
+@app.route('/api/upload_video', methods=['POST'])
+def handle_video_upload():
+    if 'user_id' not in session:
+        return jsonify({"error": "You must be logged in to upload."}), 401
+
+    data = request.get_json()
+    title = data.get('title')
+    description = data.get('description')
+    drive_link = data.get('drive_link')
+    
+    # Grab the new fields!
+    thumbnail_url = data.get('thumbnail_url')
+    duration = data.get('duration')
+    visibility = data.get('visibility', 'public')
+    tags_string = data.get('tags', '') # e.g., "gaming, clutch, valorant"
+    
+    if not title or not drive_link:
+        return jsonify({"error": "Title and Drive Link are required!"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # 1. Find the user's channel
+        cursor.execute("SELECT channel_id FROM Channel WHERE user_id = %s", (session['user_id'],))
+        channel = cursor.fetchone()
+        if not channel:
+            return jsonify({"error": "You must create a Channel before uploading a video!"}), 403
+
+        # 2. Insert the Video with ALL the new fields
+        cursor.execute("""
+            INSERT INTO Video (title, description, drive_link, thumbnail_url, duration, visibility, channel_id, format) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (title, description, drive_link, thumbnail_url, duration, visibility, channel['channel_id'], "Drive Link")) 
+        
+        # Get the new Video's ID so we can attach tags to it
+        new_video_id = cursor.lastrowid
+        
+        # 3. Process the Tags (The SQL Magic)
+        if tags_string:
+            # Split the string by commas and clean up extra spaces
+            tags_list = [t.strip().lower() for t in tags_string.split(',') if t.strip()]
+            
+            for tag_name in tags_list:
+                # Check if this tag already exists in the database
+                cursor.execute("SELECT tag_id FROM Tag WHERE tag_name = %s", (tag_name,))
+                existing_tag = cursor.fetchone()
+                
+                if existing_tag:
+                    tag_id = existing_tag['tag_id']
+                else:
+                    # If it's a brand new tag, create it!
+                    cursor.execute("INSERT INTO Tag (tag_name) VALUES (%s)", (tag_name,))
+                    tag_id = cursor.lastrowid
+                
+                # Finally, link the tag to the video in the Video_Tag table
+                cursor.execute("INSERT INTO Video_Tag (video_id, tag_id) VALUES (%s, %s)", (new_video_id, tag_id))
+
+        conn.commit()
+        return jsonify({"message": "Video linked successfully!", "redirect": f"/channel/{channel['channel_id']}"}), 201
+        
+    except Exception as e:
+        print(f"\n❌ UPLOAD ERROR: {e}\n")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@app.route('/api/tags', methods=['GET'])
+def get_all_tags():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Fetch the most popular tags (up to 20)
+        cursor.execute("SELECT tag_name FROM Tag LIMIT 20")
+        tags = cursor.fetchall()
+        # Convert it to a simple list of strings: ['gaming', 'valorant', ...]
+        return jsonify([t['tag_name'] for t in tags]), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+        
 @app.route('/api/channel/<int:channel_id>', methods=['GET'])
 def get_channel_data(channel_id):
     # Mock Channel Data
