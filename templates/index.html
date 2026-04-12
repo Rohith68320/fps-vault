@@ -192,7 +192,8 @@
                         <a href="javascript:void(0)" onclick="navigate('/upload')" style="background: white; color: black; padding: 5px 12px; border-radius: 4px; font-weight: bold; text-decoration: none;">+ Upload</a>
                         <a href="javascript:void(0)" onclick="navigate('/playlists')" style="color: white; font-weight: bold; text-decoration: none;">Playlists</a>
                         <a href="javascript:void(0)" onclick="logout()" style="color: #888; text-decoration: none;">Logout</a>
-                        <div class="profile-btn" onclick="navigate('/channel/${data.user_id}')"></div>
+                        
+                        <div class="profile-btn" onclick="navigate('/my_channel')"></div> 
                     `;
                 }
             } catch (error) {
@@ -208,62 +209,49 @@
         }
         checkAuthStatus();
 
-        const genres = ["Gaming", "IRL", "Music", "E-Sports", "Talk Shows", "Art", "Science", "Fitness", "Food", "Travel"];
         const wheel = document.getElementById('wheel-container');
-        const wheelRadius = 240; 
-        const descriptions = [
-            "Join the ultimate tournament finals live right now! The stakes have never been higher.",
-            "Chill stream: chatting with viewers, reviewing setups, and hanging out.",
-            "Speedrunning classic games. Trying to beat the world record tonight!"
-        ];
+        const wheelRadius = 240;
 
-        genres.forEach((genre, i) => {
-            const el = document.createElement('div');
-            el.className = 'genre-item interactive';
-            if (i===0) el.classList.add('active-genre');
-            el.innerText = genre;
-            const angle = (i / genres.length) * 360;
-            el.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateX(${wheelRadius}px)`;
-            
-            el.onclick = (e) => {
-                document.querySelectorAll('.genre-item').forEach(g => g.classList.remove('active-genre'));
-                el.classList.add('active-genre');
-                loadGenreStreams(genre);
-                triggerRevealAnimation(); 
-            };
-            wheel.appendChild(el);
-        });
+        async function initGenres() {
+            try {
+                const res = await fetch('/api/tags');
+                let dbGenres = await res.json();
+                
+                // Fallback just in case your database has no tags yet
+                if (!dbGenres || dbGenres.length === 0) {
+                    dbGenres = ["gaming"];
+                }
+
+                wheel.innerHTML = ''; // Clear old content
+
+                dbGenres.forEach((genre, i) => {
+                    const el = document.createElement('div');
+                    el.className = 'genre-item interactive';
+                    if (i === 0) el.classList.add('active-genre');
+                    
+                    // Capitalize the DB tag (e.g., 'gaming' -> 'Gaming')
+                    el.innerText = genre.charAt(0).toUpperCase() + genre.slice(1);
+                    
+                    const angle = (i / dbGenres.length) * 360;
+                    el.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateX(${wheelRadius}px)`;
+                    
+                    el.onclick = (e) => {
+                        document.querySelectorAll('.genre-item').forEach(g => g.classList.remove('active-genre'));
+                        el.classList.add('active-genre');
+                        loadGenreStreams(genre); // Ask DB for this specific tag!
+                    };
+                    wheel.appendChild(el);
+                });
+            } catch (e) {
+                console.error("Failed to load genres:", e);
+            }
+        }
+        
+        // Start the process
+        initGenres();
 
         const generateCards = (containerId, count) => {
-            const container = document.getElementById(containerId);
-            for(let i=1; i<=count; i++) {
-                const item = document.createElement('div');
-                item.className = 'video-item';
-                const title = `Live Stream ${Math.floor(Math.random()*1000)}`;
-                const views = (Math.random() * 50 + 1).toFixed(1);
-                const desc = descriptions[Math.floor(Math.random()*descriptions.length)];
-                const localImgNum = (i % 5) + 1;
-                
-                // Give it a mock ID so it redirects to a valid URL
-                const mockId = Math.floor(Math.random() * 5) + 1;
-
-                // Fallback to picsum if local image doesn't exist
-                const thumbUrl = window.location.protocol.startsWith('blob') 
-                    ? `https://picsum.photos/seed/fpsvault${i}/320/180`
-                    : `/static/images/thumb${localImgNum}.jpg`;
-
-                item.innerHTML = `
-                    <div class="video-thumb" style="background-image: url('${thumbUrl}');"></div>
-                    <div class="card-content">
-                        <div class="card-title">${title}</div>
-                        <div class="card-views">🔴 ${views}k Viewers</div>
-                        <div class="card-desc">${desc}</div>
-                    </div>
-                `;
-                // Redirect to the dedicated Watch Page instead of opening a modal!
-                item.onclick = () => navigate(`/watch/${mockId}`);
-                container.appendChild(item);
-            }
+            
         };
 
         generateCards('random-picks', 12);
@@ -291,35 +279,26 @@
         ring.rotation.x = Math.PI / 2;
         carouselGroup.add(ring);
 
-        const videoCount = 12;
-        const videoRadius = 15;
-        const videoPlanes = [];
+        let videoPlanes = [];
+        const planeGeo = new THREE.PlaneGeometry(6, 9);
 
-        function createVideoTexture(title, hue) {
+        // 1. Updated Texture function to accept real image URLs!
+        // 1. Updated 3D Texture Builder (Bulletproof Fallback)
+        function createVideoTexture(title, hue, imageUrl) {
             const canvas = document.createElement('canvas');
             canvas.width = 400; canvas.height = 600;
             const ctx = canvas.getContext('2d');
             const texture = new THREE.CanvasTexture(canvas);
             
+            // Draw a fallback background FIRST
             const grad = ctx.createLinearGradient(0, 0, 0, 600);
             grad.addColorStop(0, `hsl(${hue}, 40%, 15%)`);
             grad.addColorStop(1, `hsl(${hue}, 60%, 5%)`);
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, 400, 600);
-            
-            const img = new Image();
-            const localImgNum = Math.floor(Math.random() * 5) + 1;
-            
-            // Use picsum for previews
-            img.src = window.location.protocol.startsWith('blob') 
-                ? `https://picsum.photos/seed/fps${hue}/400/600`
-                : `/static/images/thumb${localImgNum}.jpg`;
-                
-            // Need crossOrigin to draw external images to canvas without tainting it
-            img.crossOrigin = "Anonymous";
-            
-            img.onload = () => {
-                ctx.drawImage(img, 0, 0, 400, 600);
+
+            // Function to draw the UI text over whatever background we have
+            const drawUI = () => {
                 ctx.strokeStyle = `rgba(255,255,255,0.15)`;
                 ctx.lineWidth = 4;
                 ctx.strokeRect(2, 2, 396, 596);
@@ -330,43 +309,167 @@
                 ctx.fillText('LIVE', 60, 42);
                 texture.needsUpdate = true;
             };
+
+            // Draw UI instantly so the card is never invisible
+            drawUI(); 
+            
+            if (imageUrl) {
+                const img = new Image();
+                img.crossOrigin = "Anonymous"; // Required for 3D textures
+                img.src = imageUrl;
+                
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0, 400, 600);
+                    drawUI(); // Redraw UI on top of the loaded image
+                };
+                img.onerror = () => {
+                    console.warn("3D Canvas blocked image load (CORS). Using fallback color.");
+                    drawUI();
+                };
+            }
             return texture;
         }
 
-        const planeGeo = new THREE.PlaneGeometry(6, 9);
-        
-        for (let i = 0; i < videoCount; i++) {
-            const angle = (i / videoCount) * Math.PI * 2;
-            const mat = new THREE.MeshBasicMaterial({ 
-                map: createVideoTexture(`Stream ${i+1}`, i * 30),
-                transparent: true, opacity: 0, side: THREE.DoubleSide
-            });
-            const plane = new THREE.Mesh(planeGeo, mat);
-            plane.userData = { 
-                id: (i % 3) + 1, // Mock DB ID
-                title: `Stream ${i+1}`,
-                desc: descriptions[i % descriptions.length],
-                views: `${(Math.random() * 50 + 1).toFixed(1)}k Viewers`
-            }; 
-            plane.position.x = Math.cos(angle) * videoRadius;
-            plane.position.z = Math.sin(angle) * videoRadius;
-            plane.position.y = 0;
-            plane.rotation.y = -angle + Math.PI / 2;
-            carouselGroup.add(plane);
-            videoPlanes.push(plane);
+        // 2. Universal Link Formatter
+        function formatThumbnailUrl(url) {
+            if (!url) return 'https://via.placeholder.com/640x360.png?text=No+Thumbnail';
+            
+            // If it's a standard Google Drive link
+            if (url.includes('drive.google.com/file/d/')) {
+                const match = url.match(/\/d\/(.*?)\//);
+                if (match && match[1]) return `/api/proxy_thumb/${match[1]}`;
+            }
+            // If it's already a /uc Google Drive link
+            if (url.includes('drive.google.com/uc')) {
+                const match = url.match(/id=(.*?)(&|$)/);
+                if (match && match[1]) return `/api/proxy_thumb/${match[1]}`;
+            }
+
+            return url.includes('?') ? `${url}&t=${new Date().getTime()}` : `${url}?t=${new Date().getTime()}`;
         }
 
-        function loadGenreStreams(genreName) {
-            videoPlanes.forEach((p, i) => {
-                gsap.to(p.scale, { x: 0.1, y: 0.1, duration: 0.3, ease: "power2.in", onComplete: () => {
-                    const newTitle = `${genreName} Stream ${i+1}`;
-                    p.material.map = createVideoTexture(newTitle, Math.random() * 360);
-                    p.userData.title = newTitle;
-                    p.userData.desc = descriptions[Math.floor(Math.random()*descriptions.length)];
-                    p.userData.views = `${(Math.random() * 100 + 1).toFixed(1)}k Viewers`;
-                    gsap.to(p.scale, { x: 1, y: 1, duration: 0.5, ease: "back.out(1.5)", delay: i * 0.05 });
-                }});
-            });
+        // 3. Updated Feed Loader
+        async function loadHomepageFeed() {
+            try {
+                const res = await fetch('/api/feed');
+                let feed = await res.json();
+
+                if (!feed || feed.length === 0) {
+                    feed = [{ video_id: 1, title: "No Videos", channel_name: "Admin", views_count: 0, thumbnail_url: null }];
+                }
+
+                const vCount = feed.length;
+                const dynamicRadius = Math.max(15, vCount * 1.8);
+                
+                window.targetCameraZ = dynamicRadius + 17;
+                scene.fog.near = dynamicRadius - 5;
+                scene.fog.far = dynamicRadius * 3;
+                
+                // Adjust the glowing floor ring to match the massive circle
+                ring.geometry.dispose();
+                ring.geometry = new THREE.RingGeometry(dynamicRadius - 0.2, dynamicRadius + 0.2, 128);
+
+                // Build 3D Carousel
+                for (let i = 0; i < vCount; i++) {
+                    const video = feed[i];
+                    const angle = (i / vCount) * Math.PI * 2;
+                    
+                    const safeThumbUrl = formatThumbnailUrl(video.thumbnail_url);
+
+                    const mat = new THREE.MeshBasicMaterial({ 
+                        map: createVideoTexture(video.title, i * (360/vCount), safeThumbUrl),
+                        transparent: true, opacity: 0, side: THREE.DoubleSide
+                    });
+
+                    const plane = new THREE.Mesh(planeGeo, mat);
+                    plane.userData = { 
+                        id: video.video_id, title: video.title,
+                        desc: `By ${video.channel_name}`, views: video.views_count
+                    }; 
+
+                    plane.position.x = Math.cos(angle) * dynamicRadius;
+                    plane.position.z = Math.sin(angle) * dynamicRadius;
+                    plane.position.y = 0;
+                    plane.rotation.y = -angle + Math.PI / 2;
+                    
+                    carouselGroup.add(plane);
+                    videoPlanes.push(plane);
+                }
+                triggerRevealAnimation();
+
+                // Build Bottom Rows
+                function renderRealCards(containerId, videoList) {
+                    const container = document.getElementById(containerId);
+                    if (!container) return;
+                    container.innerHTML = ''; 
+
+                    videoList.forEach(video => {
+                        const item = document.createElement('div');
+                        item.className = 'video-item';
+                        
+                        const safeThumbUrl = formatThumbnailUrl(video.thumbnail_url);
+
+                        item.innerHTML = `
+                            <div class="video-thumb" style="background-image: url('${safeThumbUrl}'); background-size: cover; background-position: center;"></div>
+                            <div class="card-content">
+                                <div class="card-title" style="font-weight: bold; margin-bottom: 5px;">${video.title}</div>
+                                <div class="card-views" style="color: #aaa; font-size: 13px;">${video.views_count} Views</div>
+                                <div class="card-desc" style="color: #e50914; font-size: 12px; margin-top: 5px;">By ${video.channel_name}</div>
+                            </div>
+                        `;
+                        item.onclick = () => navigate(`/watch/${video.video_id}`);
+                        container.appendChild(item);
+                    });
+                }
+
+                renderRealCards('trending-now', feed.slice(0, 10));
+                const shuffled = [...feed].sort(() => 0.5 - Math.random());
+                renderRealCards('random-picks', shuffled.slice(0, 10));
+
+            } catch (err) {
+                console.error("Failed to load feed:", err);
+            }
+        }
+
+        // Start the engine!
+        loadHomepageFeed();
+
+        async function loadGenreStreams(genreName) {
+            try {
+                // 1. Fetch real videos from the Python backend
+                const res = await fetch(`/api/feed/tag/${genreName}`);
+                let feed = await res.json();
+
+                // 2. Safety fallback if a tag has no videos
+                if (!feed || feed.length === 0) {
+                    feed = [{ video_id: 1, title: `No videos for ${genreName} yet`, channel_name: "Admin", views_count: 0, thumbnail_url: null, description: "Check back later!" }];
+                }
+
+                // 3. Update the 3D Cards with real DB data!
+                videoPlanes.forEach((p, i) => {
+                    // Use modulo (%) so if you have 3 videos but 20 cards, it loops them without crashing
+                    const video = feed[i % feed.length]; 
+                    const safeThumbUrl = formatThumbnailUrl(video.thumbnail_url);
+
+                    gsap.to(p.scale, { x: 0.1, y: 0.1, duration: 0.3, ease: "power2.in", onComplete: () => {
+                        
+                        // NEW: Pass the safeThumbUrl so the image actually draws!
+                        p.material.map = createVideoTexture(video.title, Math.random() * 360, safeThumbUrl);
+                        
+                        // Update the hover info with real data
+                        p.userData.id = video.video_id;
+                        p.userData.title = video.title;
+                        p.userData.desc = video.description || `Uploaded by ${video.channel_name}`;
+                        p.userData.views = video.views_count;
+                        
+                        gsap.to(p.scale, { x: 1, y: 1, duration: 0.5, ease: "back.out(1.5)", delay: i * 0.05 });
+                    }});
+                });
+                
+                triggerRevealAnimation();
+            } catch (err) {
+                console.error("Failed to load genre streams:", err);
+            }
         }
 
         let targetCarouselRotY = 0;
@@ -423,7 +526,9 @@
         function triggerRevealAnimation() {
             if (!hasAnimatedCamera) {
                 hasAnimatedCamera = true;
-                gsap.to(camera.position, { y: 2, z: 32, duration: 2.5, ease: "power3.inOut" });
+                // Grab the dynamic Z distance, or default to 32
+                const finalZ = window.targetCameraZ || 32; 
+                gsap.to(camera.position, { y: 2, z: finalZ, duration: 2.5, ease: "power3.inOut" });
                 videoPlanes.forEach(p => gsap.to(p.material, { opacity: 1, duration: 2, delay: 0.5 }));
             }
         }
