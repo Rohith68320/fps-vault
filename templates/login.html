@@ -32,7 +32,7 @@
         async function login() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const msgBox = document.getElementById('message');
+            const msgBox = document.getElementById('message'); // <-- This is your variable name!
 
             // 1. Frontend Check: Are fields empty?
             if (!email || !password) {
@@ -46,26 +46,27 @@
 
             // 2. Ask Python to verify
             try {
-                const response = await fetch('/api/login', {
+                const res = await fetch('/api/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, password: password })
+                    body: JSON.stringify({ email, password })
                 });
 
-                const result = await response.json();
-                
-                if (response.ok) {
-                    msgBox.style.color = '#00C851';
-                    msgBox.innerText = "Login Successful! Redirecting...";
-                    setTimeout(() => window.location.href = "/", 1000);
+                if (res.ok) {
+                    const data = await res.json();
+                    msgBox.style.color = "#4CAF50"; // CHANGED TO msgBox
+                    msgBox.innerText = "Login successful. Redirecting...";
+                    
+                    // Go to whichever page Python told us to go to!
+                    setTimeout(() => window.location.href = data.redirect, 1000);
                 } else {
-                    // This catches the "Incorrect password" or "No account found" from Python
-                    msgBox.style.color = '#ff4444';
-                    msgBox.innerText = result.error;
+                    const errData = await res.json();
+                    msgBox.style.color = '#ff4444'; // CHANGED TO msgBox
+                    msgBox.innerText = errData.error || "Invalid credentials.";
                 }
-            } catch (error) {
-                msgBox.style.color = '#ff4444';
-                msgBox.innerText = "Server error. Please try again later.";
+            } catch (err) {
+                msgBox.style.color = '#ff4444'; // CHANGED TO msgBox
+                msgBox.innerText = "Connection error. Please try again.";
             }
         }
     </script>

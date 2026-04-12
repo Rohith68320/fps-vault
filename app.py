@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from mysql.connector import pooling
 import urllib.request
 from flask import Response
+from thefuzz import fuzz
 
 load_dotenv()
 
@@ -181,14 +182,49 @@ def get_recommendations(video_id):
         cursor.close(); conn.close()
         
 @app.route('/api/login', methods=['POST'])
-def login_user():
-    # Automatically log in anyone who tries to log in
+def login():
     data = request.get_json()
-    email = data.get('email', '')
-    username = email.split('@')[0] if '@' in email else "DemoUser"
-    session['user_id'] = 1
-    session['username'] = username.capitalize()
-    return jsonify({"message": "Login successful!"}), 200
+    email = data.get('email')
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({"error": "Email and password required"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # 1. SECRET CHECK: Is this an Admin?
+        cursor.execute("SELECT admin_id, first_name FROM Admin WHERE email=%s AND password=%s", (email, password))
+        admin = cursor.fetchone()
+
+        if admin:
+            session.clear() # Clear any existing sessions
+            session['admin_id'] = admin['admin_id']
+            session['admin_name'] = admin['first_name']
+            # Send back a special redirect URL just for admins
+            return jsonify({"message": "Admin login successful", "redirect": "/admin"}), 200
+
+        # 2. NORMAL CHECK: Is this a regular User?
+        cursor.execute("SELECT user_id, first_name FROM User WHERE email=%s AND password=%s", (email, password))
+        user = cursor.fetchone()
+
+        if user:
+            session.clear()
+            session['user_id'] = user['user_id']
+            # Re-adding these just in case your frontend requires them!
+            session['username'] = user['first_name'] 
+            session['logged_in'] = True 
+            
+            # Send back the standard homepage redirect
+            return jsonify({"message": "Login successful", "redirect": "/"}), 200
+        
+        # 3. Neither? Block them.
+        return jsonify({"error": "Invalid email or password"}), 401
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close(); conn.close()
 
 @app.route('/api/upload_video', methods=['POST'])
 def handle_video_upload():
@@ -571,6 +607,299 @@ def toggle_subscribe(channel_id):
         
         return jsonify({"subscribed": is_subbed, "subscriber_cnt": new_count}), 200
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close(); conn.close()
+
+# ==========================================
+# PLAYLIST APIs
+# ==========================================
+# ==========================================
+# PLAYLIST APIs
+# ==========================================
+@app.route('/api/playlists', methods=['GET', 'POST'])
+def handle_playlists():
+    if 'user_id' not in session: return jsonify({"error": "Unauthorized"}), 401
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        if request.method == 'POST':
+            data = request.get_json()
+            name = data.get('name')
+            visibility = data.get('visibility', 'private') # Default to private
+            
+            if not name: return jsonify({"error": "Name required"}), 400
+            
+            # Now saving visibility as well!
+            cursor.execute("INSERT INTO Playlist (user_id, name, visibility) VALUES (%s, %s, %s)", 
+                           (session['user_id'], name, visibility))
+            conn.commit()
+            return jsonify({"message": "Playlist created!", "playlist_id": cursor.lastrowid}), 201
+            
+        elif request.method == 'GET':
+            cursor.execute("""
+                SELECT p.playlist_id, p.name, p.visibility, DATE_FORMAT(p.creation_date, '%M %d, %Y') as created_on,
+                       (SELECT COUNT(*) FROM Playlist_Video WHERE playlist_id = p.playlist_id) as video_count
+                FROM Playlist p
+                WHERE p.user_id = %s
+                ORDER BY p.creation_date DESC
+            """, (session['user_id'],))
+            return jsonify(cursor.fetchall()), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close(); conn.close()
+
+# NEW ROUTE: Save a video to a specific playlist
+@app.route('/api/playlists/<int:playlist_id>/add_video', methods=['POST'])
+def add_video_to_playlist(playlist_id):
+    if 'user_id' not in session: return jsonify({"error": "Unauthorized"}), 401
+    
+    video_id = request.get_json().get('video_id')
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Check if the video is already in this playlist to prevent duplicates
+        cursor.execute("SELECT 1 FROM Playlist_Video WHERE playlist_id=%s AND video_id=%s", (playlist_id, video_id))
+        if cursor.fetchone():
+            return jsonify({"message": "Already in playlist!"}), 200
+
+        # Add it!
+        cursor.execute("INSERT INTO Playlist_Video (playlist_id, video_id) VALUES (%s, %s)", (playlist_id, video_id))
+        conn.commit()
+        return jsonify({"message": "Saved to playlist!"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close(); conn.close()
+
+# ... keep your existing get_playlist_videos route below here ...
+@app.route('/api/feed/playlists', methods=['GET'])
+def get_feed_playlists():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Grabs public playlists, video count, creator, and a cover thumbnail
+        cursor.execute("""
+            SELECT p.playlist_id, p.name, c.channel_name,
+                   (SELECT COUNT(*) FROM Playlist_Video WHERE playlist_id = p.playlist_id) as video_count,
+                   (SELECT v.thumbnail_url 
+                    FROM Playlist_Video pv 
+                    JOIN Video v ON pv.video_id = v.video_id 
+                    WHERE pv.playlist_id = p.playlist_id 
+                    LIMIT 1) as thumbnail_url
+            FROM Playlist p
+            JOIN Channel c ON p.user_id = c.user_id
+            WHERE p.visibility = 'public'
+            HAVING video_count > 0
+            ORDER BY p.creation_date DESC
+            LIMIT 15
+        """)
+        return jsonify(cursor.fetchall()), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close(); conn.close()
+
+@app.route('/api/playlists/<int:playlist_id>', methods=['GET'])
+def get_playlist_videos(playlist_id):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # 1. Check if the playlist exists and get its visibility
+        cursor.execute("SELECT name, visibility, user_id FROM Playlist WHERE playlist_id = %s", (playlist_id,))
+        playlist = cursor.fetchone()
+        
+        if not playlist: 
+            return jsonify({"error": "Playlist not found"}), 404
+
+        # 2. Security Check: If it's private, only the owner can view it
+        if playlist['visibility'] == 'private':
+            if 'user_id' not in session or session['user_id'] != playlist['user_id']:
+                return jsonify({"error": "This playlist is private"}), 403
+
+        # 3. Get all the videos!
+        cursor.execute("""
+            SELECT v.video_id, v.title, v.thumbnail_url, v.views_count, c.channel_name
+            FROM Playlist_Video pv
+            JOIN Video v ON pv.video_id = v.video_id
+            JOIN Channel c ON v.channel_id = c.channel_id
+            WHERE pv.playlist_id = %s
+        """, (playlist_id,))
+        
+        return jsonify({"name": playlist['name'], "videos": cursor.fetchall()}), 200
+
+    except Exception as e:
+        print(f"\n❌ PLAYLIST FETCH ERROR: {e}\n") # This will print to your terminal if it crashes!
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+# ==========================================
+# TICKETING & REPORTING APIs
+# ==========================================
+@app.route('/api/report/video', methods=['POST'])
+def report_video():
+    if 'user_id' not in session: return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.get_json()
+    video_id = data.get('video_id')
+    category = data.get('category')
+    description = data.get('description')
+    
+    if not all([video_id, category, description]):
+        return jsonify({"error": "All fields are required"}), 400
+        
+    # Auto-generate a title for the admin to read easily!
+    title = f"Report for Video ID: {video_id} - {category.title()}"
+        
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Using YOUR exact column names: title, category, description, video_id
+        cursor.execute("""
+            INSERT INTO Ticket (user_id, video_id, title, category, description, status) 
+            VALUES (%s, %s, %s, %s, %s, 'new')
+        """, (session['user_id'], video_id, title, category, description))
+        conn.commit()
+        return jsonify({"message": "Report submitted successfully!"}), 201
+    except Exception as e:
+        print(f"\n❌ TICKET INSERT ERROR: {e}\n")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close(); conn.close()
+
+# The Bouncer for the HTML Page
+@app.route('/admin')
+def admin_page():
+    # If they don't have a staff badge, kick them to the staff login!
+    if 'admin_id' not in session: 
+        return redirect('/staff-login')
+    return render_template('admin.html')
+
+# The API that feeds data to the dashboard
+@app.route('/api/admin/stats', methods=['GET'])
+def get_admin_stats():
+    # Strict API Security
+    if 'admin_id' not in session: 
+        return jsonify({"error": "Forbidden. Staff only."}), 403
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # 1. Gather Platform Metrics
+        cursor.execute("SELECT COUNT(*) as total_users FROM User")
+        users_count = cursor.fetchone()['total_users']
+        
+        cursor.execute("SELECT COUNT(*) as total_videos, SUM(views_count) as total_views FROM Video")
+        video_stats = cursor.fetchone()
+        
+        # 2. Get the active tickets! (Using your exact Ticket table layout)
+        cursor.execute("""
+            SELECT t.ticket_id, t.title, t.category, t.status, t.date_created, u.first_name as reported_by
+            FROM Ticket t
+            JOIN User u ON t.user_id = u.user_id
+            WHERE t.status != 'resolved'
+            ORDER BY t.date_created DESC
+            LIMIT 20
+        """)
+        active_tickets = cursor.fetchall()
+        
+        return jsonify({
+            "metrics": {
+                "users": users_count,
+                "videos": video_stats['total_videos'] or 0,
+                "views": int(video_stats['total_views'] or 0) if video_stats['total_views'] else 0
+            },
+            "tickets": active_tickets # We will show these in the dashboard next!
+        }), 200
+        
+    except Exception as e:
+        print(f"ADMIN STATS ERROR: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close(); conn.close()
+
+@app.route('/api/admin/ticket/<int:ticket_id>/resolve', methods=['POST'])
+def resolve_ticket(ticket_id):
+    # Security: Only admins can resolve tickets
+    if 'admin_id' not in session: 
+        return jsonify({"error": "Unauthorized"}), 403
+        
+    data = request.get_json()
+    resolution = data.get('resolution_description')
+    
+    if not resolution:
+        return jsonify({"error": "Please provide a resolution description"}), 400
+        
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Update the ticket using your exact custom columns!
+        cursor.execute("""
+            UPDATE Ticket 
+            SET status = 'resolved', 
+                resolution_description = %s, 
+                admin_id = %s 
+            WHERE ticket_id = %s
+        """, (resolution, session['admin_id'], ticket_id))
+        
+        conn.commit()
+        return jsonify({"message": "Ticket resolved successfully"}), 200
+    except Exception as e:
+        print(f"TICKET RESOLVE ERROR: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close(); conn.close()
+
+@app.route('/api/search', methods=['GET'])
+def api_search():
+    q = request.args.get('q', '').strip().lower() # Convert to lowercase for better matching
+    
+    if not q:
+        return jsonify([]), 200
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # 1. Cast a wide net! Grab a large batch of active videos
+        # (In a massive app like YouTube, you'd use a dedicated search server like Elasticsearch, 
+        # but for our scale, filtering the top few hundred videos in memory is lightning fast!)
+        cursor.execute("""
+            SELECT v.video_id, v.title, v.thumbnail_url, v.views_count, 
+                   DATE_FORMAT(v.upload_date, '%M %d, %Y') as date,
+                   c.channel_name, c.channel_id
+            FROM Video v
+            JOIN Channel c ON v.channel_id = c.channel_id
+            ORDER BY v.views_count DESC
+            LIMIT 300
+        """)
+        all_videos = cursor.fetchall()
+        
+        # 2. The AI Brain: Score every video based on typo-tolerance
+        results = []
+        for v in all_videos:
+            # Check how closely the user's text matches the title OR the channel name
+            title_score = fuzz.partial_ratio(q, v['title'].lower())
+            channel_score = fuzz.partial_ratio(q, v['channel_name'].lower())
+            
+            # Take whichever score is higher
+            best_score = max(title_score, channel_score)
+            
+            # 3. The Filter: Only keep videos with a score of 60% or higher!
+            if best_score >= 60:
+                v['match_score'] = best_score # Save the score so we can rank them
+                results.append(v)
+                
+        # 4. Sort the final list so the 100% perfect matches are at the top, and typos are below them
+        results = sorted(results, key=lambda x: x['match_score'], reverse=True)
+        
+        return jsonify(results), 200
+        
+    except Exception as e:
+        print(f"FUZZY SEARCH ERROR: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
         cursor.close(); conn.close()
