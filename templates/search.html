@@ -1,44 +1,176 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Search Results - FPS Vault</title>
     <style>
-        body { background: #08080a; color: white; font-family: sans-serif; margin: 0; }
-        
+        body {
+            background: #08080a;
+            color: white;
+            font-family: sans-serif;
+            margin: 0;
+        }
+
         /* Basic Nav */
-        nav { background: rgba(8, 8, 10, 0.9); padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; position: sticky; top: 0; z-index: 100; }
-        .logo { font-size: 24px; font-weight: 900; color: #fff; text-decoration: none; font-style: italic; }
-        .logo span { color: #e50914; }
-        .nav-search { width: 400px; padding: 10px 15px; border-radius: 20px; border: 1px solid #333; background: #111; color: white; outline: none; }
-        .nav-search:focus { border-color: #e50914; }
+        nav {
+            background: rgba(8, 8, 10, 0.9);
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #222;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 900;
+            color: #fff;
+            text-decoration: none;
+            font-style: italic;
+        }
+
+        .logo span {
+            color: #e50914;
+        }
+
+        .nav-search {
+            width: 400px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid #333;
+            background: #111;
+            color: white;
+            outline: none;
+        }
+
+        .nav-search:focus {
+            border-color: #e50914;
+        }
 
         /* Main Layout */
-        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
-        h1 { margin-top: 0; font-size: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 30px; font-weight: normal;}
-        .query-text { color: #fff; font-weight: bold; }
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 20px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+            font-weight: normal;
+        }
+
+        .query-text {
+            color: #fff;
+            font-weight: bold;
+        }
 
         /* Vertical Video List Styling */
-        .video-list { display: flex; flex-direction: column; gap: 20px; }
-        .video-row { display: flex; gap: 20px; align-items: flex-start; text-decoration: none; }
-        
-        .thumbnail { width: 360px; min-width: 360px; aspect-ratio: 16/9; background: #222; border-radius: 12px; background-size: cover; background-position: center; cursor: pointer; transition: 0.2s; }
-        .thumbnail:hover { border-radius: 4px; } /* Slight animation on hover */
-        
-        .v-details { flex: 1; display: flex; flex-direction: column; }
-        .v-title { font-size: 18px; font-weight: normal; margin: 0 0 8px 0; cursor: pointer; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .v-meta { color: #aaa; font-size: 12px; margin: 0 0 12px 0; }
-        
+        .video-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .video-row {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            text-decoration: none;
+        }
+
+        .thumbnail {
+            width: 360px;
+            min-width: 360px;
+            aspect-ratio: 16/9;
+            background: #222;
+            border-radius: 12px;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .thumbnail:hover {
+            border-radius: 4px;
+        }
+
+        /* Slight animation on hover */
+
+        .v-details {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .v-title {
+            font-size: 18px;
+            font-weight: normal;
+            margin: 0 0 8px 0;
+            cursor: pointer;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .v-meta {
+            color: #aaa;
+            font-size: 12px;
+            margin: 0 0 12px 0;
+        }
+
         /* Channel Link Styling */
-        .channel-info { display: flex; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s; margin-bottom: 12px; }
-        .channel-info:hover .c-name { color: #fff; }
-        .c-avatar { width: 24px; height: 24px; border-radius: 50%; background: #333; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
-        .c-name { color: #aaa; font-size: 12px; }
-        
+        .channel-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 12px;
+        }
+
+        .channel-info:hover .c-name {
+            color: #fff;
+        }
+
+        .c-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .c-name {
+            color: #aaa;
+            font-size: 12px;
+        }
+
         /* Fake Description for aesthetic */
-        .v-desc { color: #888; font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0; }
+        .v-desc {
+            color: #888;
+            font-size: 12px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin: 0;
+        }
     </style>
 </head>
+
 <body>
 
     <nav>
@@ -49,17 +181,17 @@
 
     <div class="container">
         <h1>Search results for <span class="query-text" id="display-query">...</span></h1>
-        
+
         <div id="loading" style="color: #888;">Scanning the vault...</div>
-        
+
         <div class="video-list" id="results-list">
-            </div>
+        </div>
     </div>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const searchQuery = urlParams.get('q');
-        
+
         document.getElementById('display-query').innerText = `"${searchQuery || ''}"`;
         document.getElementById('search-input').value = searchQuery || '';
 
@@ -72,7 +204,7 @@
             try {
                 const res = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
                 const videos = await res.json();
-                
+
                 const list = document.getElementById('results-list');
                 document.getElementById('loading').style.display = 'none';
 
@@ -80,7 +212,7 @@
                     list.innerHTML = `<h3 style="color: #e50914;">Backend Error: ${videos.error}</h3>`;
                     return;
                 }
-                
+
                 if (videos.length === 0) {
                     list.innerHTML = '<h3 style="color: #aaa;">No videos found matching that search.</h3>';
                     return;
@@ -122,12 +254,19 @@
 
         performSearch();
 
-        document.getElementById('search-input').addEventListener('keypress', function(e) {
+        document.getElementById('search-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 const newQuery = this.value.trim();
                 if (newQuery) window.location.href = '/search?q=' + encodeURIComponent(newQuery);
             }
         });
     </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                .catch((err) => console.warn('SW registration failed:', err));
+        }
+    </script>
 </body>
+
 </html>

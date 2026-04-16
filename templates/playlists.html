@@ -1,37 +1,151 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>My Playlists - FPS Vault</title>
     <style>
-        body { background: #08080a; color: white; font-family: sans-serif; margin: 0; }
-        nav { background: rgba(8, 8, 10, 0.9); padding: 15px 40px; display: flex; justify-content: space-between; border-bottom: 1px solid #222; }
-        .logo { font-size: 24px; font-weight: 900; color: #fff; text-decoration: none; font-style: italic; }
-        .logo span { color: #e50914; }
+        body {
+            background: #08080a;
+            color: white;
+            font-family: sans-serif;
+            margin: 0;
+        }
 
-        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
-        
-        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        h1 { margin: 0; font-size: 28px; }
-        
-        .btn-create { background: #e50914; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-create:hover { background: #ff0a16; }
+        nav {
+            background: rgba(8, 8, 10, 0.9);
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #222;
+        }
 
-        .playlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
-        
-        .playlist-card { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 20px; cursor: pointer; transition: 0.3s; text-align: center; position: relative; }
-        .playlist-card:hover { border-color: #e50914; transform: translateY(-5px); }
-        .playlist-icon { font-size: 40px; margin-bottom: 15px; }
-        .playlist-title { font-weight: bold; font-size: 18px; margin-bottom: 5px; }
-        .playlist-count { color: #aaa; font-size: 13px; }
-        .playlist-visibility { position: absolute; top: 15px; right: 15px; font-size: 14px; }
+        .logo {
+            font-size: 24px;
+            font-weight: 900;
+            color: #fff;
+            text-decoration: none;
+            font-style: italic;
+        }
+
+        .logo span {
+            color: #e50914;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .btn-create {
+            background: #e50914;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-create:hover {
+            background: #ff0a16;
+        }
+
+        .playlist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .playlist-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-align: center;
+            position: relative;
+        }
+
+        .playlist-card:hover {
+            border-color: #e50914;
+            transform: translateY(-5px);
+        }
+
+        .playlist-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+
+        .playlist-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .playlist-count {
+            color: #aaa;
+            font-size: 13px;
+        }
+
+        .playlist-visibility {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 14px;
+        }
 
         /* Simple Modal for creating a playlist */
-        #create-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: #111; padding: 30px; border-radius: 12px; width: 320px; text-align: center; border: 1px solid #333; }
-        .modal-input { width: 90%; padding: 10px; margin-bottom: 15px; background: #222; border: 1px solid #444; color: white; border-radius: 6px; outline: none; }
+        #create-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #111;
+            padding: 30px;
+            border-radius: 12px;
+            width: 320px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .modal-input {
+            width: 90%;
+            padding: 10px;
+            margin-bottom: 15px;
+            background: #222;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 6px;
+            outline: none;
+        }
     </style>
 </head>
+
 <body>
     <nav>
         <a href="/" class="logo">FPS<span>-</span>VAULT</a>
@@ -41,7 +155,8 @@
     <div class="container">
         <div class="header-row">
             <h1>My Playlists</h1>
-            <button class="btn-create" onclick="document.getElementById('create-modal').style.display='flex'">+ New Playlist</button>
+            <button class="btn-create" onclick="document.getElementById('create-modal').style.display='flex'">+ New
+                Playlist</button>
         </div>
 
         <div class="playlist-grid" id="playlist-grid">
@@ -53,15 +168,17 @@
         <div class="modal-content">
             <h3 style="margin-top: 0;">Create a Playlist</h3>
             <input type="text" id="new-playlist-title" class="modal-input" placeholder="E.g., Chill Beats">
-            
+
             <select id="new-playlist-visibility" class="modal-input" style="margin-bottom: 25px; width: 97%;">
                 <option value="private">🔒 Private (Only you)</option>
                 <option value="public">🌍 Public (Searchable)</option>
             </select>
 
             <div style="display: flex; gap: 10px; justify-content: center;">
-                <button onclick="document.getElementById('create-modal').style.display='none'" style="background: #333; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Cancel</button>
-                <button onclick="createPlaylist()" style="background: #e50914; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Create</button>
+                <button onclick="document.getElementById('create-modal').style.display='none'"
+                    style="background: #333; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Cancel</button>
+                <button onclick="createPlaylist()"
+                    style="background: #e50914; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Create</button>
             </div>
         </div>
     </div>
@@ -82,7 +199,7 @@
                 playlists.forEach(p => {
                     const card = document.createElement('div');
                     card.className = 'playlist-card';
-                    
+
                     // Add a tiny icon to show if it's public or private
                     const visibilityIcon = p.visibility === 'public' ? '🌍' : '🔒';
 
@@ -109,10 +226,10 @@
             const res = await fetch('/api/playlists', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     name: titleBox.value,
-                    visibility: visibilityBox.value 
-                }) 
+                    visibility: visibilityBox.value
+                })
             });
 
             if (res.ok) {
@@ -127,5 +244,12 @@
 
         loadPlaylists();
     </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                .catch((err) => console.warn('SW registration failed:', err));
+        }
+    </script>
 </body>
+
 </html>
