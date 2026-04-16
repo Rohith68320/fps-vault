@@ -1,143 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>Channel - FPS Vault</title>
     <style>
-        body {
-            background: #08080a;
-            color: white;
-            font-family: sans-serif;
-            margin: 0;
-        }
+        body { background: #08080a; color: white; font-family: sans-serif; margin: 0; }
+        nav { background: rgba(8, 8, 10, 0.9); padding: 15px 40px; display: flex; justify-content: space-between; border-bottom: 1px solid #222; }
+        .logo { font-size: 24px; font-weight: 900; color: #fff; text-decoration: none; font-style: italic; }
+        .logo span { color: #e50914; }
 
-        nav {
-            background: rgba(8, 8, 10, 0.9);
-            padding: 15px 40px;
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid #222;
-        }
+        .channel-header { background: #141414; padding: 40px; text-align: center; border-bottom: 1px solid #333; }
+        .channel-avatar { width: 100px; height: 100px; background: #e50914; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: bold; }
+        .channel-name { font-size: 32px; margin: 0 0 10px 0; }
+        .channel-stats { color: #aaa; margin-bottom: 20px; }
+        .btn-subscribe { background: white; color: black; border: none; padding: 10px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 16px; }
 
-        .logo {
-            font-size: 24px;
-            font-weight: 900;
-            color: #fff;
-            text-decoration: none;
-            font-style: italic;
-        }
-
-        .logo span {
-            color: #e50914;
-        }
-
-        .channel-header {
-            background: #141414;
-            padding: 40px;
-            text-align: center;
-            border-bottom: 1px solid #333;
-        }
-
-        .channel-avatar {
-            width: 100px;
-            height: 100px;
-            background: #e50914;
-            border-radius: 50%;
-            margin: 0 auto 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            font-weight: bold;
-        }
-
-        .channel-name {
-            font-size: 32px;
-            margin: 0 0 10px 0;
-        }
-
-        .channel-stats {
-            color: #aaa;
-            margin-bottom: 20px;
-        }
-
-        .btn-subscribe {
-            background: white;
-            color: black;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 25px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .content-container {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-
+        .content-container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+        
         /* The Video Grid */
-        .video-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-        }
+        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .video-card { background: #1a1a1a; border-radius: 10px; overflow: hidden; cursor: pointer; transition: 0.2s; text-decoration: none; color: white; display: block;}
+        .video-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(229, 9, 20, 0.3); }
+        
+        .thumbnail { width: 100%; aspect-ratio: 16/9; background: #333; object-fit: cover; }
+        .video-info { padding: 15px; }
+        .video-title { font-size: 16px; margin: 0 0 8px 0; font-weight: bold; line-height: 1.4; }
+        .video-meta { color: #aaa; font-size: 13px; }
 
-        .video-card {
-            background: #1a1a1a;
-            border-radius: 10px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: 0.2s;
-            text-decoration: none;
-            color: white;
-            display: block;
-        }
-
-        .video-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(229, 9, 20, 0.3);
-        }
-
-        .thumbnail {
-            width: 100%;
-            aspect-ratio: 16/9;
-            background: #333;
-            object-fit: cover;
-        }
-
-        .video-info {
-            padding: 15px;
-        }
-
-        .video-title {
-            font-size: 16px;
-            margin: 0 0 8px 0;
-            font-weight: bold;
-            line-height: 1.4;
-        }
-
-        .video-meta {
-            color: #aaa;
-            font-size: 13px;
-        }
-
-        #loading {
-            text-align: center;
-            padding: 50px;
-            font-size: 20px;
-            color: #888;
-        }
-
-        #channel-content {
-            display: none;
-        }
+        #loading { text-align: center; padding: 50px; font-size: 20px; color: #888; }
+        #channel-content { display: none; }
     </style>
 </head>
-
 <body>
     <nav>
         <a href="/" class="logo">FPS<span>-</span>VAULT</a>
@@ -158,7 +51,7 @@
         <div class="content-container">
             <h2>Videos</h2>
             <div class="video-grid" id="video-grid">
-            </div>
+                </div>
         </div>
     </div>
 
@@ -203,7 +96,7 @@
                         const card = document.createElement('a');
                         card.href = `/watch/${video.video_id}`;
                         card.className = 'video-card';
-
+                        
                         card.innerHTML = `
                             <img src="${thumbUrl}" class="thumbnail" alt="Thumbnail">
                             <div class="video-info">
@@ -227,12 +120,5 @@
 
         loadChannel();
     </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js', { scope: '/' })
-                .catch((err) => console.warn('SW registration failed:', err));
-        }
-    </script>
 </body>
-
 </html>

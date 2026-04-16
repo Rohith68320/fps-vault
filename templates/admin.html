@@ -1,146 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>Admin Control - FPS Vault</title>
     <style>
-        body {
-            background: #08080a;
-            color: white;
-            font-family: sans-serif;
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .sidebar {
-            width: 250px;
-            background: #111;
-            border-right: 1px solid #222;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .logo {
-            font-size: 24px;
-            font-weight: 900;
-            color: #fff;
-            text-decoration: none;
-            font-style: italic;
-            margin-bottom: 40px;
-            text-align: center;
-        }
-
-        .logo span {
-            color: #e50914;
-        }
-
-        .nav-link {
-            color: #aaa;
-            text-decoration: none;
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            font-weight: bold;
-            transition: 0.2s;
-        }
-
-        .nav-link:hover,
-        .nav-link.active {
-            background: #e50914;
-            color: white;
-        }
-
-        .main-content {
-            flex: 1;
-            padding: 40px;
-            overflow-y: auto;
-        }
-
-        h1 {
-            margin-top: 0;
-            font-size: 28px;
-            border-bottom: 1px solid #333;
-            padding-bottom: 15px;
-            margin-bottom: 30px;
-        }
-
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .metric-card {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 25px;
-            text-align: center;
-            border-top: 4px solid #e50914;
-        }
-
-        .m-title {
-            color: #aaa;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-
-        .m-value {
-            font-size: 36px;
-            font-weight: bold;
-            margin: 0;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #111;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid #222;
-        }
-
-        .data-table th {
-            background: #1a1a1a;
-            color: #aaa;
-            font-size: 12px;
-            text-transform: uppercase;
-        }
-
-        .data-table tr:hover {
-            background: #1a1a1a;
-        }
-
-        .btn-delete {
-            background: transparent;
-            border: 1px solid #e50914;
-            color: #e50914;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .btn-delete:hover {
-            background: #e50914;
-            color: white;
-        }
+        body { background: #08080a; color: white; font-family: sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        .sidebar { width: 250px; background: #111; border-right: 1px solid #222; padding: 20px; display: flex; flex-direction: column; }
+        .logo { font-size: 24px; font-weight: 900; color: #fff; text-decoration: none; font-style: italic; margin-bottom: 40px; text-align: center; }
+        .logo span { color: #e50914; }
+        .nav-link { color: #aaa; text-decoration: none; padding: 12px 15px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; transition: 0.2s; }
+        .nav-link:hover, .nav-link.active { background: #e50914; color: white; }
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+        h1 { margin-top: 0; font-size: 28px; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 30px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .metric-card { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 25px; text-align: center; border-top: 4px solid #e50914; }
+        .m-title { color: #aaa; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .m-value { font-size: 36px; font-weight: bold; margin: 0; }
+        .data-table { width: 100%; border-collapse: collapse; background: #111; border-radius: 10px; overflow: hidden; }
+        .data-table th, .data-table td { padding: 15px; text-align: left; border-bottom: 1px solid #222; }
+        .data-table th { background: #1a1a1a; color: #aaa; font-size: 12px; text-transform: uppercase; }
+        .data-table tr:hover { background: #1a1a1a; }
+        .btn-delete { background: transparent; border: 1px solid #e50914; color: #e50914; padding: 5px 10px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+        .btn-delete:hover { background: #e50914; color: white; }
     </style>
 </head>
-
 <body>
     <div class="sidebar">
         <a href="/" class="logo">FPS<span>-</span>VAULT</a>
@@ -153,57 +36,35 @@
     <div class="main-content">
         <h1>Platform Overview</h1>
         <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="m-title">Total Users</div>
-                <div class="m-value" id="stat-users">--</div>
-            </div>
-            <div class="metric-card">
-                <div class="m-title">Total Videos</div>
-                <div class="m-value" id="stat-videos">--</div>
-            </div>
-            <div class="metric-card">
-                <div class="m-title">Platform Views</div>
-                <div class="m-value" id="stat-views">--</div>
-            </div>
+            <div class="metric-card"><div class="m-title">Total Users</div><div class="m-value" id="stat-users">--</div></div>
+            <div class="metric-card"><div class="m-title">Total Videos</div><div class="m-value" id="stat-videos">--</div></div>
+            <div class="metric-card"><div class="m-title">Platform Views</div><div class="m-value" id="stat-views">--</div></div>
         </div>
         <h2 style="font-size: 20px; margin-bottom: 15px;">Active User Reports</h2>
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Ticket ID</th>
-                    <th>Report Title</th>
-                    <th>Category</th>
-                    <th>Reported By</th>
-                    <th>Date</th>
-                    <th>Action</th>
+                    <th>Ticket ID</th><th>Report Title</th><th>Category</th><th>Reported By</th><th>Date</th><th>Action</th>
                 </tr>
             </thead>
             <tbody id="ticket-table-body">
-                <tr>
-                    <td colspan="6" style="text-align: center; color: #666;">Loading data...</td>
-                </tr>
+                <tr><td colspan="6" style="text-align: center; color: #666;">Loading data...</td></tr>
             </tbody>
         </table>
     </div>
 
-    <div id="resolve-modal"
-        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000;">
+    <div id="resolve-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000;">
         <div style="background: #111; padding: 30px; border-radius: 12px; width: 400px; border: 1px solid #333;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3 style="margin: 0; color: white;">Resolve Ticket #<span id="modal-ticket-id"></span></h3>
-                <span onclick="document.getElementById('resolve-modal').style.display='none'"
-                    style="cursor: pointer; font-size: 20px; color: #aaa;">✖</span>
+                <span onclick="document.getElementById('resolve-modal').style.display='none'" style="cursor: pointer; font-size: 20px; color: #aaa;">✖</span>
             </div>
+            
+            <p style="color: #aaa; font-size: 13px; margin-top: 0;">Enter resolution details. This will close the ticket permanently.</p>
+            
+            <textarea id="resolution-text" placeholder="E.g., Video reviewed and removed for copyright violation." style="width: 100%; height: 100px; padding: 12px; margin-bottom: 20px; background: #222; border: 1px solid #444; color: white; border-radius: 6px; outline: none; resize: none; box-sizing: border-box; font-family: sans-serif;"></textarea>
 
-            <p style="color: #aaa; font-size: 13px; margin-top: 0;">Enter resolution details. This will close the ticket
-                permanently.</p>
-
-            <textarea id="resolution-text" placeholder="E.g., Video reviewed and removed for copyright violation."
-                style="width: 100%; height: 100px; padding: 12px; margin-bottom: 20px; background: #222; border: 1px solid #444; color: white; border-radius: 6px; outline: none; resize: none; box-sizing: border-box; font-family: sans-serif;"></textarea>
-
-            <button id="submit-resolve-btn"
-                style="width: 100%; background: #4CAF50; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer;">Mark
-                as Resolved</button>
+            <button id="submit-resolve-btn" style="width: 100%; background: #4CAF50; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer;">Mark as Resolved</button>
         </div>
     </div>
 
@@ -220,7 +81,7 @@
 
                 const tbody = document.getElementById('ticket-table-body');
                 tbody.innerHTML = '';
-
+                
                 if (!data.tickets || data.tickets.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #aaa;">No active reports!</td></tr>';
                     return;
@@ -274,12 +135,5 @@
             }
         };
     </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js', { scope: '/' })
-                .catch((err) => console.warn('SW registration failed:', err));
-        }
-    </script>
 </body>
-
 </html>

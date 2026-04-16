@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request, session, redirect, send_from_directory
+from flask import Flask, render_template, jsonify, request, session, redirect
 import os, re, mysql.connector
 from dotenv import load_dotenv
 from mysql.connector import pooling
@@ -927,18 +927,6 @@ def api_search():
         return jsonify({"error": str(e)}), 500
     finally:
         cursor.close(); conn.close()
-
-@app.route('/sw.js')
-def service_worker():
-    return send_from_directory('static', 'sw.js')
-
-@app.after_request
-def add_cache_headers(response):
-    if request.path == '/' or request.path == '/api/feed':
-        response.headers['Cache-Control'] = 'public, max-age=60, stale-while-revalidate=300'
-    elif request.path.startswith('/static/'):
-        response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
-    return response
 
 if __name__ == '__main__':
     print("FPS-VAULT Offline Server Running (No DB required)...")

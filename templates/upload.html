@@ -1,124 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>Upload Video - FPS Vault</title>
     <style>
-        body {
-            background: #08080a;
-            color: white;
-            font-family: sans-serif;
-            margin: 0;
+        body { background: #08080a; color: white; font-family: sans-serif; margin: 0; }
+        nav { background: rgba(8, 8, 10, 0.9); padding: 20px 40px; display: flex; justify-content: space-between; border-bottom: 1px solid #222;}
+        .logo { font-size: 24px; font-weight: 900; color: #fff; text-decoration: none; font-style: italic;}
+        .logo span { color: #e50914; }
+        
+        .upload-container { max-width: 600px; margin: 50px auto; background: #141414; padding: 40px; border-radius: 12px; border: 1px solid #333;}
+        h1 { margin-top: 0; margin-bottom: 30px; text-align: center;}
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #ccc;}
+        input[type="text"], input[type="url"], input[type="number"], textarea, select {
+            width: 100%; padding: 12px; background: #0a0a0c; border: 1px solid #333; 
+            border-radius: 6px; color: white; box-sizing: border-box; font-family: inherit;
         }
-
-        nav {
-            background: rgba(8, 8, 10, 0.9);
-            padding: 20px 40px;
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid #222;
-        }
-
-        .logo {
-            font-size: 24px;
-            font-weight: 900;
-            color: #fff;
-            text-decoration: none;
-            font-style: italic;
-        }
-
-        .logo span {
-            color: #e50914;
-        }
-
-        .upload-container {
-            max-width: 600px;
-            margin: 50px auto;
-            background: #141414;
-            padding: 40px;
-            border-radius: 12px;
-            border: 1px solid #333;
-        }
-
-        h1 {
-            margin-top: 0;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #ccc;
-        }
-
-        input[type="text"],
-        input[type="url"],
-        input[type="number"],
-        textarea,
-        select {
-            width: 100%;
-            padding: 12px;
-            background: #0a0a0c;
-            border: 1px solid #333;
-            border-radius: 6px;
-            color: white;
-            box-sizing: border-box;
-            font-family: inherit;
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
+        textarea { resize: vertical; min-height: 100px; }
+        
         /* Side-by-side grid for shorter inputs */
-        .row {
-            display: flex;
-            gap: 15px;
-        }
-
-        .row .form-group {
-            flex: 1;
-        }
-
-        .btn-submit {
-            width: 100%;
-            padding: 15px;
-            background: #e50914;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
+        .row { display: flex; gap: 15px; }
+        .row .form-group { flex: 1; }
+        
+        .btn-submit { 
+            width: 100%; padding: 15px; background: #e50914; color: white; border: none; 
+            border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s;
             margin-top: 10px;
         }
-
-        .btn-submit:hover {
-            background: #ff0a16;
-        }
-
-        .btn-submit:disabled {
-            background: #555;
-            cursor: not-allowed;
-        }
-
-        #status-msg {
-            margin-top: 15px;
-            text-align: center;
-            font-weight: bold;
-        }
+        .btn-submit:hover { background: #ff0a16; }
+        .btn-submit:disabled { background: #555; cursor: not-allowed; }
+        
+        #status-msg { margin-top: 15px; text-align: center; font-weight: bold; }
     </style>
 </head>
-
 <body>
     <nav>
         <a href="/" class="logo">FPS<span>-</span>VAULT</a>
@@ -132,7 +48,7 @@
                 <label>Video Title</label>
                 <input type="text" id="title" required placeholder="Epic 1v5 Clutch...">
             </div>
-
+            
             <div class="form-group">
                 <label>Google Drive Shareable Link (Video)</label>
                 <input type="url" id="driveLink" required placeholder="https://drive.google.com/file/d/...">
@@ -167,7 +83,7 @@
                 <label>Description</label>
                 <textarea id="description" placeholder="Tell viewers about your video..."></textarea>
             </div>
-
+            
             <button type="submit" class="btn-submit" id="submitBtn">Submit Video</button>
             <div id="status-msg"></div>
         </form>
@@ -180,17 +96,17 @@
                 const response = await fetch('/api/tags');
                 const tags = await response.json();
                 const container = document.getElementById('suggested-tags');
-
+                
                 tags.forEach(tag => {
                     const badge = document.createElement('span');
                     badge.innerText = tag;
                     // Styling for the tag pill
                     badge.style.cssText = "background: #222; padding: 5px 12px; border-radius: 20px; font-size: 13px; color: #ccc; cursor: pointer; border: 1px solid #444; transition: 0.2s;";
-
+                    
                     // Hover effect
                     badge.onmouseover = () => badge.style.background = "#e50914";
                     badge.onmouseout = () => badge.style.background = "#222";
-
+                    
                     // When clicked, add it to the input box!
                     badge.onclick = () => {
                         const input = document.getElementById('tags');
@@ -206,13 +122,13 @@
                 console.error("Failed to load tags:", error);
             }
         });
-
+        
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
+            
             const submitBtn = document.getElementById('submitBtn');
             const statusMsg = document.getElementById('status-msg');
-
+            
             submitBtn.disabled = true;
             submitBtn.innerText = "Saving to Database...";
             statusMsg.innerText = "";
@@ -255,12 +171,5 @@
             }
         });
     </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js', { scope: '/' })
-                .catch((err) => console.warn('SW registration failed:', err));
-        }
-    </script>
 </body>
-
 </html>
