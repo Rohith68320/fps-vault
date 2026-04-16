@@ -105,12 +105,35 @@
             color: var(--text-light);
             text-decoration: none;
             font-size: 18px;
-            transition: color 0.2s;
+            transition: color 0.2s, transform 0.2s, background 0.2s;
             cursor: pointer;
         }
 
         .nav-links a:hover {
             color: var(--primary);
+        }
+
+        .nav-links a.playlist-link {
+            color: #aaa;
+            font-weight: 600;
+        }
+
+        .nav-links a.playlist-link:hover {
+            color: #ffd700;
+            transform: scale(1.05);
+        }
+
+        .nav-links a.logout-btn {
+            color: #888;
+            background: transparent;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .nav-links a.logout-btn:hover {
+            background: #e50914;
+            color: white;
         }
 
         .profile-btn {
@@ -407,7 +430,7 @@
             <input type="text" id="search-input" class="search-bar"
                 placeholder="Search live streams, channels, or games...">
         </div>
-        <div class="nav-links">
+        <div class="nav-links" id="auth-section">
             <a href="/login" style="color: white; font-weight: bold;">Login</a>
             <a href="/register"
                 style="background: var(--primary); padding: 5px 15px; border-radius: 4px; color: white;">Sign Up</a>
@@ -497,8 +520,8 @@
                     authSection.innerHTML = `
                         <span style="font-weight: bold; color: var(--primary);">Welcome, ${data.username}</span>
                         <a href="javascript:void(0)" onclick="navigate('/upload')" style="background: white; color: black; padding: 5px 12px; border-radius: 4px; font-weight: bold; text-decoration: none;">+ Upload</a>
-                        <a href="javascript:void(0)" onclick="navigate('/playlists')" style="color: white; font-weight: bold; text-decoration: none;">Playlists</a>
-                        <a href="javascript:void(0)" onclick="logout()" style="color: #888; text-decoration: none;">Logout</a>
+                        <a href="javascript:void(0)" onclick="navigate('/playlists')" class="playlist-link" style="text-decoration: none;">Playlists</a>
+                        <a href="javascript:void(0)" onclick="logout()" class="logout-btn" style="text-decoration: none;">Logout</a>
                         
                         <div class="profile-btn" onclick="navigate('/my_channel')"></div> 
                     `;
