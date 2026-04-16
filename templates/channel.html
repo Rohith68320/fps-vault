@@ -1,40 +1,255 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Channel - FPS Vault</title>
     <style>
-        body { background: #08080a; color: white; font-family: sans-serif; margin: 0; }
-        nav { background: rgba(8, 8, 10, 0.9); padding: 15px 40px; display: flex; justify-content: space-between; border-bottom: 1px solid #222; }
-        .logo { font-size: 24px; font-weight: 900; color: #fff; text-decoration: none; font-style: italic; }
-        .logo span { color: #e50914; }
+        body {
+            background: #08080a;
+            color: white;
+            font-family: sans-serif;
+            margin: 0;
+        }
 
-        .channel-header { background: #141414; padding: 40px; text-align: center; border-bottom: 1px solid #333; }
-        .channel-avatar { width: 100px; height: 100px; background: #e50914; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: bold; }
-        .channel-name { font-size: 32px; margin: 0 0 10px 0; }
-        .channel-stats { color: #aaa; margin-bottom: 20px; }
-        .btn-subscribe { background: white; color: black; border: none; padding: 10px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        nav {
+            position: sticky;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background: rgba(8, 8, 10, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            box-sizing: border-box;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
 
-        .content-container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
-        
+        .logo {
+            font-size: 26px;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 4px;
+            text-decoration: none;
+            cursor: pointer;
+            font-style: italic;
+            text-shadow: 0 0 10px #e50914, 3px 3px 0px #550000;
+            transition: transform 0.3s ease, text-shadow 0.3s ease;
+        }
+
+        .logo span {
+            color: #e50914;
+            text-shadow: 3px 3px 0px #222;
+        }
+
+        .logo:hover {
+            transform: scale(1.05) skewX(-5deg);
+            text-shadow: 0 0 20px #e50914, 4px 4px 0px #550000;
+        }
+
+        .search-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            padding: 0 40px;
+        }
+
+        .search-bar {
+            width: 100%;
+            max-width: 650px;
+            padding: 12px 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            color: white;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.3s, background 0.3s;
+        }
+
+        .search-bar:focus {
+            border-color: #e50914;
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #f5f5f5;
+            text-decoration: none;
+            font-size: 18px;
+            transition: color 0.2s, transform 0.2s, background 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-links a:hover {
+            color: #e50914;
+        }
+
+        .nav-links a.playlist-link {
+            color: #aaa;
+            font-weight: 600;
+        }
+
+        .nav-links a.playlist-link:hover {
+            color: #ffd700;
+            transform: scale(1.05);
+        }
+
+        .nav-links a.logout-btn {
+            color: #888;
+            background: transparent;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .nav-links a.logout-btn:hover {
+            background: #e50914;
+            color: white;
+        }
+
+        .profile-btn {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #333;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.2s;
+        }
+
+        .profile-btn:hover {
+            border-color: #e50914;
+        }
+
+        .channel-header {
+            background: #141414;
+            padding: 40px;
+            text-align: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .channel-avatar {
+            width: 100px;
+            height: 100px;
+            background: #e50914;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: bold;
+        }
+
+        .channel-name {
+            font-size: 32px;
+            margin: 0 0 10px 0;
+        }
+
+        .channel-stats {
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+
+        .btn-subscribe {
+            background: white;
+            color: black;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .content-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
         /* The Video Grid */
-        .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .video-card { background: #1a1a1a; border-radius: 10px; overflow: hidden; cursor: pointer; transition: 0.2s; text-decoration: none; color: white; display: block;}
-        .video-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(229, 9, 20, 0.3); }
-        
-        .thumbnail { width: 100%; aspect-ratio: 16/9; background: #333; object-fit: cover; }
-        .video-info { padding: 15px; }
-        .video-title { font-size: 16px; margin: 0 0 8px 0; font-weight: bold; line-height: 1.4; }
-        .video-meta { color: #aaa; font-size: 13px; }
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
 
-        #loading { text-align: center; padding: 50px; font-size: 20px; color: #888; }
-        #channel-content { display: none; }
+        .video-card {
+            background: #1a1a1a;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            color: white;
+            display: block;
+        }
+
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(229, 9, 20, 0.3);
+        }
+
+        .thumbnail {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #333;
+            object-fit: cover;
+        }
+
+        .video-info {
+            padding: 15px;
+        }
+
+        .video-title {
+            font-size: 16px;
+            margin: 0 0 8px 0;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+
+        .video-meta {
+            color: #aaa;
+            font-size: 13px;
+        }
+
+        #loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 20px;
+            color: #888;
+        }
+
+        #channel-content {
+            display: none;
+        }
     </style>
 </head>
+
 <body>
     <nav>
-        <a href="/" class="logo">FPS<span>-</span>VAULT</a>
-        <a href="/" style="color: #aaa; text-decoration: none;">← Home</a>
+        <a href="javascript:void(0)" class="logo" onclick="navigate('/')">FPS<span>-</span>VAULT</a>
+        <div class="search-container">
+            <input id="search-input" class="search-bar" type="text"
+                placeholder="Search live streams, channels, or games...">
+        </div>
+        <div class="nav-links" id="auth-section">
+            <a href="/login" style="color: white; font-weight: bold;">Login</a>
+            <a href="/register"
+                style="background: #e50914; padding: 5px 15px; border-radius: 4px; color: white; text-decoration: none;">Sign
+                Up</a>
+        </div>
     </nav>
 
     <div id="loading">Loading Channel Data...</div>
@@ -51,7 +266,7 @@
         <div class="content-container">
             <h2>Videos</h2>
             <div class="video-grid" id="video-grid">
-                </div>
+            </div>
         </div>
     </div>
 
@@ -96,7 +311,7 @@
                         const card = document.createElement('a');
                         card.href = `/watch/${video.video_id}`;
                         card.className = 'video-card';
-                        
+
                         card.innerHTML = `
                             <img src="${thumbUrl}" class="thumbnail" alt="Thumbnail">
                             <div class="video-info">
@@ -120,5 +335,60 @@
 
         loadChannel();
     </script>
+    <script>
+        function navigate(path) {
+            if (window.location.protocol.startsWith('blob')) {
+                const msg = document.createElement('div');
+                msg.innerText = `Redirecting to ${path}...`;
+                msg.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#e50914; color:white; padding:10px 20px; border-radius:20px; z-index:9999; font-weight:bold;";
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 1500);
+            } else {
+                window.location.href = path;
+            }
+        }
+
+        async function checkAuthStatus() {
+            const authSection = document.getElementById('auth-section');
+            if (!authSection) return;
+            try {
+                if (window.location.protocol.startsWith('blob')) return;
+                const response = await fetch('/api/current_user');
+                const data = await response.json();
+                if (data.logged_in) {
+                    authSection.innerHTML = `
+                        <span style="font-weight: bold; color: #e50914;">Welcome, ${data.username}</span>
+                        <a href="javascript:void(0)" onclick="navigate('/upload')" class="playlist-link" style="text-decoration: none;">+ Upload</a>
+                        <a href="javascript:void(0)" onclick="navigate('/playlists')" class="playlist-link" style="text-decoration: none;">Playlists</a>
+                        <a href="javascript:void(0)" onclick="logout()" class="logout-btn" style="text-decoration: none;">Logout</a>
+                        <div class="profile-btn" onclick="navigate('/profile')"></div>
+                    `;
+                }
+            } catch (error) {
+                console.warn('Auth check failed:', error);
+            }
+        }
+
+        async function logout() {
+            if (!window.location.protocol.startsWith('blob')) {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.reload();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        const query = this.value.trim();
+                        if (query) window.location.href = '/search?q=' + encodeURIComponent(query);
+                    }
+                });
+            }
+            checkAuthStatus();
+        });
+    </script>
 </body>
+
 </html>

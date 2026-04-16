@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Profile - FPS Vault</title>
+    <style>
+        body {
+            background: #08080a;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+        }
+
+        nav {
+            position: sticky;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background: rgba(8, 8, 10, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            box-sizing: border-box;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 4px;
+            text-decoration: none;
+            cursor: pointer;
+            font-style: italic;
+            text-shadow: 0 0 10px #e50914, 3px 3px 0px #550000;
+            transition: transform 0.3s ease, text-shadow 0.3s ease;
+        }
+
+        .logo span {
+            color: #e50914;
+            text-shadow: 3px 3px 0px #222;
+        }
+
+        .logo:hover {
+            transform: scale(1.05) skewX(-5deg);
+            text-shadow: 0 0 20px #e50914, 4px 4px 0px #550000;
+        }
+
+        .search-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            padding: 0 40px;
+        }
+
+        .search-bar {
+            width: 100%;
+            max-width: 650px;
+            padding: 12px 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            color: white;
+            outline: none;
+            font-size: 14px;
+            transition: border-color 0.3s, background 0.3s;
+        }
+
+        .search-bar:focus {
+            border-color: #e50914;
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: #f5f5f5;
+            text-decoration: none;
+            font-size: 18px;
+            transition: color 0.2s, transform 0.2s, background 0.2s;
+            cursor: pointer;
+        }
+
+        .nav-links a:hover {
+            color: #e50914;
+        }
+
+        .nav-links a.playlist-link {
+            color: #aaa;
+            font-weight: 600;
+        }
+
+        .nav-links a.playlist-link:hover {
+            color: #ffd700;
+            transform: scale(1.05);
+        }
+
+        .nav-links a.logout-btn {
+            color: #888;
+            background: transparent;
+            padding: 5px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .nav-links a.logout-btn:hover {
+            background: #e50914;
+            color: white;
+        }
+
+        .profile-btn {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #333;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: 0.2s;
+        }
+
+        .profile-btn:hover {
+            border-color: #e50914;
+        }
+
+        .nav-right {
+            display: flex;
+            gap: 18px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: #ccc;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .profile-panel {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 24px;
+            align-items: center;
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 18px;
+            padding: 30px;
+        }
+
+        .profile-card {
+            background: #141414;
+            border: 1px solid #222;
+            border-radius: 18px;
+            padding: 24px;
+        }
+
+        .avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: #e50914;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 18px;
+        }
+
+        .title {
+            margin: 0 0 8px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #aaa;
+            margin: 0 0 18px;
+        }
+
+        .stat-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            margin-top: 18px;
+        }
+
+        .stat-box {
+            background: #0f0f0f;
+            border: 1px solid #222;
+            border-radius: 14px;
+            padding: 16px;
+            min-width: 140px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #777;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .section {
+            margin-top: 40px;
+        }
+
+        .section h2 {
+            margin: 0 0 18px;
+            font-size: 26px;
+        }
+
+        .grid {
+            display: grid;
+            gap: 18px;
+        }
+
+        .video-grid {
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        }
+
+        .card-grid {
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.18s ease, border-color 0.18s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: #e50914;
+        }
+
+        .card-thumb {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            background: #111;
+        }
+
+        .card-body {
+            padding: 16px;
+        }
+
+        .card-title {
+            margin: 0 0 10px;
+            font-size: 17px;
+            line-height: 1.4;
+        }
+
+        .card-meta {
+            margin: 0;
+            color: #999;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .empty-state {
+            color: #777;
+            padding: 30px 0;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        #loading {
+            text-align: center;
+            padding: 80px 0;
+            font-size: 20px;
+            color: #aaa;
+        }
+
+        .sub-list {
+            display: grid;
+            gap: 14px;
+        }
+
+        .sub-item {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .sub-item div {
+            min-width: 0;
+        }
+
+        .sub-title {
+            font-size: 16px;
+            margin: 0 0 6px;
+        }
+
+        .sub-meta {
+            color: #999;
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .dot {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #222;
+            color: #e50914;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        @media(max-width: 900px) {
+            .profile-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <a href="javascript:void(0)" class="logo" onclick="navigate('/')">FPS<span>-</span>VAULT</a>
+        <div class="search-container">
+            <input id="search-input" class="search-bar" type="text"
+                placeholder="Search live streams, channels, or games...">
+        </div>
+        <div class="nav-links" id="auth-section">
+            <a href="/login" style="color: white; font-weight: bold;">Login</a>
+            <a href="/register"
+                style="background: #e50914; padding: 5px 15px; border-radius: 4px; color: white; text-decoration: none;">Sign
+                Up</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="loading">Loading your profile...</div>
+
+        <div id="profile-content" style="display:none;">
+            <div class="profile-panel">
+                <div class="profile-card">
+                    <div class="avatar" id="profile-avatar">U</div>
+                    <h1 class="title" id="profile-name">Username</h1>
+                    <p class="subtitle" id="profile-channel">Channel Name</p>
+                    <p id="profile-description" style="color:#bbb; line-height:1.7; margin:0;">Your channel description
+                        appears here once your profile loads.</p>
+                    <div class="stat-row">
+                        <div class="stat-box">
+                            <div class="stat-label">Subscribers</div>
+                            <div class="stat-value" id="profile-subs">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Videos</div>
+                            <div class="stat-value" id="profile-video-count">0</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">Playlists</div>
+                            <div class="stat-value" id="profile-playlist-count">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-card">
+                    <h2>Welcome Back</h2>
+                    <p style="color:#ccc; line-height:1.7;">This page shows your channel, videos, playlists, and the
+                        channels you have subscribed to. Use it as your personal dashboard to keep track of your content
+                        and subscriptions.</p>
+                </div>
+            </div>
+
+            <section class="section">
+                <h2>My Videos</h2>
+                <div class="grid video-grid" id="videos-grid"></div>
+                <div class="empty-state" id="videos-empty" style="display:none;">You haven't uploaded any videos yet.
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>My Playlists</h2>
+                <div class="grid card-grid" id="playlists-grid"></div>
+                <div class="empty-state" id="playlists-empty" style="display:none;">No playlists created yet.</div>
+            </section>
+
+            <section class="section">
+                <h2>Subscribed Channels</h2>
+                <div class="sub-list" id="subscriptions-list"></div>
+                <div class="empty-state" id="subscriptions-empty" style="display:none;">You are not subscribed to any
+                    channels yet.</div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        async function loadProfile() {
+            try {
+                const response = await fetch('/api/profile');
+                if (!response.ok) throw new Error('Unable to load profile');
+                const data = await response.json();
+
+                document.getElementById('profile-avatar').innerText = data.channel.channel_name ? data.channel.channel_name.charAt(0).toUpperCase() : data.username.charAt(0).toUpperCase();
+                document.getElementById('profile-name').innerText = data.username;
+                document.getElementById('profile-channel').innerText = data.channel.channel_name || 'My Channel';
+                document.getElementById('profile-description').innerText = data.channel.description || 'Add a channel description to make your profile stand out.';
+                document.getElementById('profile-subs').innerText = data.channel.subscriber_cnt || 0;
+                document.getElementById('profile-video-count').innerText = data.videos.length;
+                document.getElementById('profile-playlist-count').innerText = data.playlists.length;
+
+                const videosGrid = document.getElementById('videos-grid');
+                videosGrid.innerHTML = '';
+                if (data.videos.length === 0) {
+                    document.getElementById('videos-empty').style.display = 'block';
+                } else {
+                    document.getElementById('videos-empty').style.display = 'none';
+                    data.videos.forEach(video => {
+                        const card = document.createElement('a');
+                        card.href = `/watch/${video.video_id}`;
+                        card.className = 'card';
+                        const thumb = formatThumbnail(video.thumbnail_url);
+                        card.innerHTML = `
+                            <img class="card-thumb" src="${thumb}" alt="${video.title}">
+                            <div class="card-body">
+                                <h3 class="card-title">${video.title}</h3>
+                                <p class="card-meta">${video.views_count} views • ${video.upload_date}</p>
+                            </div>
+                        `;
+                        videosGrid.appendChild(card);
+                    });
+                }
+
+                const playlistsGrid = document.getElementById('playlists-grid');
+                playlistsGrid.innerHTML = '';
+                if (data.playlists.length === 0) {
+                    document.getElementById('playlists-empty').style.display = 'block';
+                } else {
+                    document.getElementById('playlists-empty').style.display = 'none';
+                    data.playlists.forEach(pl => {
+                        const card = document.createElement('div');
+                        card.className = 'card';
+                        card.onclick = () => window.location.href = '/play/playlist/' + pl.playlist_id;
+                        card.innerHTML = `
+                            <div class="card-body">
+                                <h3 class="card-title">${pl.name}</h3>
+                                <p class="card-meta">${pl.video_count} videos • ${pl.visibility}</p>
+                            </div>
+                        `;
+                        playlistsGrid.appendChild(card);
+                    });
+                }
+
+                const subscriptionsList = document.getElementById('subscriptions-list');
+                subscriptionsList.innerHTML = '';
+                if (data.subscriptions.length === 0) {
+                    document.getElementById('subscriptions-empty').style.display = 'block';
+                } else {
+                    document.getElementById('subscriptions-empty').style.display = 'none';
+                    data.subscriptions.forEach(sub => {
+                        const item = document.createElement('div');
+                        item.className = 'sub-item';
+                        item.innerHTML = `
+                            <div>
+                                <div class="sub-title">${sub.channel_name}</div>
+                                <p class="sub-meta">${sub.subscriber_cnt} subscribers</p>
+                            </div>
+                            <div class="dot">${sub.channel_name.charAt(0).toUpperCase()}</div>
+                        `;
+                        item.onclick = () => window.location.href = '/channel/' + sub.channel_id;
+                        subscriptionsList.appendChild(item);
+                    });
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('profile-content').style.display = 'block';
+            } catch (error) {
+                document.getElementById('loading').innerText = error.message;
+                document.getElementById('loading').style.color = '#e50914';
+            }
+        }
+
+        function formatThumbnail(url) {
+            if (!url) return 'https://via.placeholder.com/640x360/111111/cccccc?text=No+Thumbnail';
+            if (url.includes('drive.google.com/file/d/')) {
+                const match = url.match(/\/d\/(.*?)\//);
+                if (match && match[1]) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w640`;
+            }
+            return url;
+        }
+
+        loadProfile();
+    </script>
+    <script>
+        function navigate(path) {
+            if (window.location.protocol.startsWith('blob')) {
+                const msg = document.createElement('div');
+                msg.innerText = `Redirecting to ${path}...`;
+                msg.style.cssText = "position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#e50914; color:white; padding:10px 20px; border-radius:20px; z-index:9999; font-weight:bold;";
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 1500);
+            } else {
+                window.location.href = path;
+            }
+        }
+
+        async function checkAuthStatus() {
+            const authSection = document.getElementById('auth-section');
+            if (!authSection) return;
+            try {
+                if (window.location.protocol.startsWith('blob')) return;
+                const response = await fetch('/api/current_user');
+                const data = await response.json();
+                if (data.logged_in) {
+                    authSection.innerHTML = `
+                        <span style="font-weight: bold; color: #e50914;">Welcome, ${data.username}</span>
+                        <a href="javascript:void(0)" onclick="navigate('/upload')" class="playlist-link" style="text-decoration: none;">+ Upload</a>
+                        <a href="javascript:void(0)" onclick="navigate('/playlists')" class="playlist-link" style="text-decoration: none;">Playlists</a>
+                        <a href="javascript:void(0)" onclick="logout()" class="logout-btn" style="text-decoration: none;">Logout</a>
+                        <div class="profile-btn" onclick="navigate('/profile')"></div>
+                    `;
+                }
+            } catch (error) {
+                console.warn('Auth check failed:', error);
+            }
+        }
+
+        async function logout() {
+            if (!window.location.protocol.startsWith('blob')) {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.reload();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        const query = this.value.trim();
+                        if (query) window.location.href = '/search?q=' + encodeURIComponent(query);
+                    }
+                });
+            }
+            checkAuthStatus();
+        });
+    </script>
+</body>
+
+</html>

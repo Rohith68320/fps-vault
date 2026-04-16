@@ -79,6 +79,12 @@ def my_channel():
         cursor.close()
         conn.close()
 
+@app.route('/profile')
+def profile_page():
+    if 'user_id' not in session:
+        return redirect('/login')
+    return render_template('profile.html')
+
 @app.route('/channel/<int:channel_id>')
 def channel_page(channel_id):
     return render_template('channel.html', channel_id=channel_id)
@@ -95,6 +101,68 @@ def current_user():
     if 'user_id' in session:
         return jsonify({"logged_in": True, "username": session['username'], "user_id": session['user_id']})
     return jsonify({"logged_in": False})
+
+@app.route('/api/profile', methods=['GET'])
+def get_profile():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        # Load the user's own channel details
+        cursor.execute("""
+            SELECT c.channel_id, c.channel_name, c.description, c.avatar_url,
+                   (SELECT COUNT(*) FROM Subscription WHERE channel_id = c.channel_id) AS subscriber_cnt
+            FROM Channel c
+            WHERE c.user_id = %s
+        """, (session['user_id'],))
+        channel = cursor.fetchone() or {}
+
+        # Load the user's videos from their channel
+        channel_id = channel.get('channel_id')
+        videos = []
+        if channel_id:
+            cursor.execute("""
+                SELECT video_id, title, thumbnail_url, views_count, DATE_FORMAT(upload_date, '%M %d, %Y') AS upload_date
+                FROM Video
+                WHERE channel_id = %s
+                ORDER BY upload_date DESC
+            """, (channel_id,))
+            videos = cursor.fetchall()
+
+        # Load the user's playlists
+        cursor.execute("""
+            SELECT playlist_id, name, visibility,
+                   (SELECT COUNT(*) FROM Playlist_Video WHERE playlist_id = p.playlist_id) AS video_count
+            FROM Playlist p
+            WHERE p.user_id = %s
+            ORDER BY creation_date DESC
+        """, (session['user_id'],))
+        playlists = cursor.fetchall()
+
+        # Load subscriptions for the current user
+        cursor.execute("""
+            SELECT c.channel_id, c.channel_name,
+                   (SELECT COUNT(*) FROM Subscription WHERE channel_id = c.channel_id) AS subscriber_cnt
+            FROM Subscription s
+            JOIN Channel c ON s.channel_id = c.channel_id
+            WHERE s.user_id = %s
+            ORDER BY s.subscribed_at DESC
+        """, (session['user_id'],))
+        subscriptions = cursor.fetchall()
+
+        return jsonify({
+            "username": session.get('username', 'User'),
+            "channel": channel,
+            "videos": videos,
+            "playlists": playlists,
+            "subscriptions": subscriptions
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cursor.close(); conn.close()
 
 @app.route('/api/logout', methods=['POST'])
 def logout_user():
