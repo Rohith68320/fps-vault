@@ -104,22 +104,15 @@
             transform: scale(1.05);
         }
 
-        .nav-links a.logout-btn {
-            color: #888;
-            background: transparent;
-            padding: 5px 12px;
-            border-radius: 4px;
-            font-weight: 600;
-        }
-
-        .nav-links a.logout-btn:hover {
-            background: #e50914;
-            color: white;
+        /* --- NEW DROPDOWN CSS --- */
+        .user-menu-container {
+            position: relative;
+            display: inline-block;
         }
 
         .profile-btn {
-            width: 35px;
-            height: 35px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             background: #333;
             cursor: pointer;
@@ -129,7 +122,71 @@
 
         .profile-btn:hover {
             border-color: #e50914;
+            box-shadow: 0 0 10px rgba(229, 9, 20, 0.5);
         }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 55px;
+            background-color: #141414;
+            min-width: 220px;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.8);
+            border: 1px solid #333;
+            border-radius: 8px;
+            z-index: 1000;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dropdown-header {
+            padding: 15px 20px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+        }
+
+        .dropdown-header .user-name {
+            margin: 0;
+            font-weight: bold;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .dropdown-item {
+            color: #ccc;
+            padding: 12px 20px;
+            text-decoration: none;
+            display: block;
+            transition: 0.2s;
+            font-size: 15px;
+        }
+
+        .dropdown-item:hover {
+            background-color: #222;
+            color: #fff;
+        }
+
+        .logout-text {
+            color: #e50914 !important;
+            border-top: 1px solid #333;
+        }
+
+        .logout-text:hover {
+            background-color: #e50914 !important;
+            color: #fff !important;
+        }
+        /* ------------------------ */
 
         .channel-header {
             background: #141414;
@@ -178,7 +235,6 @@
             padding: 0 20px;
         }
 
-        /* The Video Grid */
         .video-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -271,7 +327,6 @@
     </div>
 
     <script>
-        // Extract the channel ID from the URL (e.g., /channel/1 -> 1)
         const channelId = window.location.pathname.split('/').pop();
 
         async function loadChannel() {
@@ -280,34 +335,28 @@
                 if (!res.ok) throw new Error("Channel not found");
                 const data = await res.json();
 
-                // Populate Header
                 document.getElementById('c-name').innerText = data.channel_name;
                 document.getElementById('c-subs').innerText = data.subscriber_cnt;
                 document.getElementById('c-desc').innerText = data.description || "";
                 document.getElementById('c-avatar').innerText = data.channel_name.charAt(0).toUpperCase();
 
-                // Populate Videos
                 const grid = document.getElementById('video-grid');
-                grid.innerHTML = ''; // Clear out the grid
+                grid.innerHTML = '';
 
                 if (data.videos.length === 0) {
                     grid.innerHTML = "<p style='color: #888;'>This channel hasn't uploaded any videos yet.</p>";
                 } else {
                     data.videos.forEach(video => {
-                        // NEW: Google Drive Image Converter!
                         let thumbUrl = video.thumbnail_url;
                         if (thumbUrl && thumbUrl.includes('drive.google.com/file/d/')) {
-                            // Extract the secret File ID using Regex
                             const match = thumbUrl.match(/\/d\/(.*?)\//);
                             if (match && match[1]) {
-                                // Convert it to Google's hidden thumbnail API!
                                 thumbUrl = `https://drive.google.com/thumbnail?id=${match[1]}&sz=w640`;
                             }
                         } else if (!thumbUrl) {
                             thumbUrl = 'https://via.placeholder.com/640x360.png?text=No+Thumbnail';
                         }
 
-                        // Create a clickable card for each video
                         const card = document.createElement('a');
                         card.href = `/watch/${video.video_id}`;
                         card.className = 'video-card';
@@ -323,7 +372,6 @@
                     });
                 }
 
-                // Show Content
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('channel-content').style.display = 'block';
 
@@ -335,6 +383,7 @@
 
         loadChannel();
     </script>
+
     <script>
         function navigate(path) {
             if (window.location.protocol.startsWith('blob')) {
@@ -348,6 +397,23 @@
             }
         }
 
+        // Dropdown toggle logic
+        function toggleDropdown(event) {
+            const dropdown = document.getElementById('userDropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('show');
+            }
+            event.stopPropagation(); // Stops the click from bubbling up to the window
+        }
+
+        // Close dropdown when clicking anywhere else
+        window.addEventListener('click', function (event) {
+            const dropdown = document.getElementById('userDropdown');
+            if (dropdown && dropdown.classList.contains('show')) {
+                dropdown.classList.remove('show');
+            }
+        });
+
         async function checkAuthStatus() {
             const authSection = document.getElementById('auth-section');
             if (!authSection) return;
@@ -355,13 +421,26 @@
                 if (window.location.protocol.startsWith('blob')) return;
                 const response = await fetch('/api/current_user');
                 const data = await response.json();
+                
+                // NEW: Dynamic UI injected with the Dropdown Menu!
                 if (data.logged_in) {
                     authSection.innerHTML = `
-                        <span style="font-weight: bold; color: #e50914;">Welcome, ${data.username}</span>
                         <a href="javascript:void(0)" onclick="navigate('/upload')" class="playlist-link" style="text-decoration: none;">+ Upload</a>
-                        <a href="javascript:void(0)" onclick="navigate('/playlists')" class="playlist-link" style="text-decoration: none;">Playlists</a>
-                        <a href="javascript:void(0)" onclick="logout()" class="logout-btn" style="text-decoration: none;">Logout</a>
-                        <div class="profile-btn" onclick="navigate('/profile')"></div>
+                        
+                        <div class="user-menu-container">
+                            <div class="profile-btn" onclick="toggleDropdown(event)" 
+                                 style="background: url('${data.avatar_url || ''}') center/cover no-repeat #333;">
+                            </div>
+                            
+                            <div class="dropdown-menu" id="userDropdown">
+                                <div class="dropdown-header">
+                                    <p class="user-name">Hello, ${data.username}</p>
+                                </div>
+                                <a href="javascript:void(0)" onclick="navigate('/history')" class="dropdown-item">🕒 Watch History</a>
+                                <a href="javascript:void(0)" onclick="navigate('/playlists')" class="dropdown-item">📁 My Playlists</a>
+                                <a href="javascript:void(0)" onclick="logout()" class="dropdown-item logout-text">🚪 Sign Out</a>
+                            </div>
+                        </div>
                     `;
                 }
             } catch (error) {

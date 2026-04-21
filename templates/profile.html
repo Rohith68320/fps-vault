@@ -224,6 +224,23 @@
             font-weight: 700;
         }
 
+        .action-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 18px;
+            background: #e50914;
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 700;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .action-button:hover {
+            background: #f22d2d;
+            transform: translateY(-2px);
+        }
+
         .section {
             margin-top: 40px;
         }
@@ -390,6 +407,7 @@
                             <div class="stat-value" id="profile-playlist-count">0</div>
                         </div>
                     </div>
+                    <a class="action-button" href="/history">View Watch History</a>
                 </div>
 
                 <div class="profile-card">
